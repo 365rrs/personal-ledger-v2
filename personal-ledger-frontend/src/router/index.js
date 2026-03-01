@@ -1,10 +1,33 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import MainLayout from '../layout/MainLayout.vue'
 
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('../views/Home.vue')
+    component: MainLayout,
+    redirect: '/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('../views/Dashboard.vue')
+      },
+      {
+        path: 'ledger',
+        name: 'Ledger',
+        component: () => import('../views/Ledger.vue')
+      },
+      {
+        path: 'category',
+        name: 'Category',
+        component: () => import('../views/Category.vue')
+      },
+      {
+        path: 'statistics',
+        name: 'Statistics',
+        component: () => import('../views/Statistics.vue')
+      }
+    ]
   }
 ]
 
