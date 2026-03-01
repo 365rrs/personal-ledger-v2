@@ -107,7 +107,6 @@ CREATE TABLE IF NOT EXISTS bill_import_record (
 |--------|------|------|----------|--------|------|
 | id | BIGINT | - | NO | AUTO_INCREMENT | 主键ID |
 | import_record_id | BIGINT | - | NO | - | 导入记录ID |
-| row_number | INT | - | NO | - | 行号 |
 | original_data | TEXT | - | YES | NULL | 原始数据（JSON格式） |
 | type | VARCHAR | 20 | YES | NULL | 类型 |
 | amount | DECIMAL | 10,2 | YES | NULL | 金额 |
@@ -148,7 +147,6 @@ CREATE TABLE IF NOT EXISTS bill_import_record (
 CREATE TABLE IF NOT EXISTS bill_import_detail (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     import_record_id BIGINT NOT NULL COMMENT '导入记录ID',
-    row_number INT NOT NULL COMMENT '行号',
     original_data TEXT COMMENT '原始数据（JSON格式）',
     type VARCHAR(20) COMMENT '类型',
     amount DECIMAL(10, 2) COMMENT '金额',
