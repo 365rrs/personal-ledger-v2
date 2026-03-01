@@ -742,17 +742,16 @@ ORDER BY usage_count DESC;
 ## 8. bill_data_clean_rule（数据清洗规则表）
 
 ### 表说明
-配置数据清洗的映射规则，用于账单导入时的数据清洗
+配置数据清洗的映射规则，用于账单导入时的数据清洗。支持多字段组合匹配。
 
 ### 字段定义
 
 | 字段名 | 类型 | 长度 | 允许NULL | 默认值 | 说明 |
 |--------|------|------|----------|--------|------|
 | id | BIGINT | - | NO | AUTO_INCREMENT | 主键ID |
-| rule_type | VARCHAR | 50 | NO | - | 规则类型：PAYMENT_CHANNEL-支付渠道，CATEGORY-分类 |
-| source_value | VARCHAR | 200 | NO | - | 原始值 |
+| rule_type | VARCHAR | 50 | NO | - | 规则类型：PAYMENT_CHANNEL-支付渠道，CATEGORY-分类，TRANSACTION_DESC-备注 |
+| match_fields | VARCHAR | 500 | NO | - | 匹配字段（JSON格式） |
 | target_value | VARCHAR | 200 | NO | - | 目标值 |
-| match_type | VARCHAR | 20 | NO | 'EXACT' | 匹配类型：EXACT-精确匹配，FUZZY-模糊匹配，CONTAINS-包含匹配 |
 | priority | INT | - | NO | 0 | 优先级（数字越大优先级越高） |
 | enabled | VARCHAR | 1 | NO | '1' | 是否启用：0-禁用，1-启用 |
 | remark | VARCHAR | 500 | YES | NULL | 备注说明 |
@@ -770,7 +769,6 @@ ORDER BY usage_count DESC;
 |--------|----------|------|------|
 | PRIMARY | 主键索引 | id | 主键 |
 | idx_rule_type | 普通索引 | rule_type | 规则类型查询 |
-| idx_source_value | 普通索引 | source_value | 原始值查询 |
 | idx_enabled | 普通索引 | enabled | 启用状态查询 |
 
 ### 建表SQL
@@ -778,10 +776,9 @@ ORDER BY usage_count DESC;
 ```sql
 CREATE TABLE IF NOT EXISTS bill_data_clean_rule (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
-    rule_type VARCHAR(50) NOT NULL COMMENT '规则类型：PAYMENT_CHANNEL-支付渠道，CATEGORY-分类',
-    source_value VARCHAR(200) NOT NULL COMMENT '原始值',
+    rule_type VARCHAR(50) NOT NULL COMMENT '规则类型：PAYMENT_CHANNEL-支付渠道，CATEGORY-分类，TRANSACTION_DESC-备注',
+    match_fields VARCHAR(500) NOT NULL COMMENT '匹配字段（JSON格式）',
     target_value VARCHAR(200) NOT NULL COMMENT '目标值',
-    match_type VARCHAR(20) NOT NULL DEFAULT 'EXACT' COMMENT '匹配类型：EXACT-精确匹配，FUZZY-模糊匹配，CONTAINS-包含匹配',
     priority INT NOT NULL DEFAULT 0 COMMENT '优先级（数字越大优先级越高）',
     enabled VARCHAR(1) NOT NULL DEFAULT '1' COMMENT '是否启用：0-禁用，1-启用',
     remark VARCHAR(500) COMMENT '备注说明',
@@ -793,96 +790,105 @@ CREATE TABLE IF NOT EXISTS bill_data_clean_rule (
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted VARCHAR(1) DEFAULT '0' COMMENT '逻辑删除标识：0-未删除，1-已删除',
     INDEX idx_rule_type (rule_type),
-    INDEX idx_source_value (source_value),
     INDEX idx_enabled (enabled)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据清洗规则表';
+```
+
+### match_fields 格式
+
+JSON 格式，支持多字段匹配：
+
+**支付渠道清洗**：
+```json
+{
+  "payment_channel": "微信"
+}
+```
+
+**分类清洗**：
+```json
+{
+  "category": "吃饭",
+  "transaction_type": "EXPENSE"
+}
+```
+
+**备注清洗**：
+```json
+{
+  "transaction_desc": "美团外卖"
+}
 ```
 
 ### 预设数据
 
 ```sql
--- 支付渠道映射规则
-INSERT INTO bill_data_clean_rule (rule_type, source_value, target_value, match_type, priority, remark) VALUES
--- 精确匹配
-('PAYMENT_CHANNEL', '微信', '微信支付', 'EXACT', 100, '微信别名'),
-('PAYMENT_CHANNEL', '微信钱包', '微信支付', 'EXACT', 100, '微信钱包别名'),
-('PAYMENT_CHANNEL', 'WeChat', '微信支付', 'EXACT', 100, '微信英文名'),
-('PAYMENT_CHANNEL', '支付宝钱包', '支付宝', 'EXACT', 100, '支付宝钱包别名'),
-('PAYMENT_CHANNEL', 'Alipay', '支付宝', 'EXACT', 100, '支付宝英文名'),
-('PAYMENT_CHANNEL', '工行', '工商银行', 'EXACT', 100, '工商银行简称'),
-('PAYMENT_CHANNEL', '建行', '建设银行', 'EXACT', 100, '建设银行简称'),
-('PAYMENT_CHANNEL', '农行', '农业银行', 'EXACT', 100, '农业银行简称'),
-('PAYMENT_CHANNEL', '中行', '中国银行', 'EXACT', 100, '中国银行简称'),
-('PAYMENT_CHANNEL', '招行', '招商银行', 'EXACT', 100, '招商银行简称'),
-('PAYMENT_CHANNEL', '现金支付', '现金', 'EXACT', 100, '现金别名'),
-('PAYMENT_CHANNEL', 'Cash', '现金', 'EXACT', 100, '现金英文名'),
--- 包含匹配
-('PAYMENT_CHANNEL', '微信', '微信支付', 'CONTAINS', 50, '包含微信关键字'),
-('PAYMENT_CHANNEL', '支付宝', '支付宝', 'CONTAINS', 50, '包含支付宝关键字'),
-('PAYMENT_CHANNEL', '银行', '银行卡', 'CONTAINS', 30, '包含银行关键字');
+-- 支付渠道映射
+INSERT INTO bill_data_clean_rule (rule_type, match_fields, target_value, priority, remark) VALUES
+('PAYMENT_CHANNEL', '{"payment_channel":"微信"}', '微信支付', 100, '微信'),
+('PAYMENT_CHANNEL', '{"payment_channel":"支付宝"}', '支付宝', 100, '支付宝'),
+('PAYMENT_CHANNEL', '{"payment_channel":"工行"}', '工商银行', 100, '工商银行'),
+('PAYMENT_CHANNEL', '{"payment_channel":"建行"}', '建设银行', 100, '建设银行'),
+('PAYMENT_CHANNEL', '{"payment_channel":"现金"}', '现金', 100, '现金');
 
--- 分类映射规则
-INSERT INTO bill_data_clean_rule (rule_type, source_value, target_value, match_type, priority, remark) VALUES
--- 精确匹配
-('CATEGORY', '吃饭', '餐饮', 'EXACT', 100, '餐饮别名'),
-('CATEGORY', '吃', '餐饮', 'EXACT', 100, '餐饮别名'),
-('CATEGORY', '饭', '餐饮', 'EXACT', 100, '餐饮别名'),
-('CATEGORY', '打车', '交通', 'EXACT', 100, '交通别名'),
-('CATEGORY', '出行', '交通', 'EXACT', 100, '交通别名'),
-('CATEGORY', '买菜', '购物', 'EXACT', 100, '购物别名'),
-('CATEGORY', '购', '购物', 'EXACT', 100, '购物别名'),
-('CATEGORY', '玩', '娱乐', 'EXACT', 100, '娱乐别名'),
-('CATEGORY', '房租', '住房', 'EXACT', 100, '住房别名'),
-('CATEGORY', '看病', '医疗', 'EXACT', 100, '医疗别名'),
-('CATEGORY', '学习', '教育', 'EXACT', 100, '教育别名'),
-('CATEGORY', '工资收入', '工资', 'EXACT', 100, '工资别名'),
-('CATEGORY', '奖金收入', '奖金', 'EXACT', 100, '奖金别名'),
--- 包含匹配
-('CATEGORY', '餐', '餐饮', 'CONTAINS', 50, '包含餐字'),
-('CATEGORY', '饮', '餐饮', 'CONTAINS', 50, '包含饮字'),
-('CATEGORY', '车', '交通', 'CONTAINS', 50, '包含车字'),
-('CATEGORY', '购', '购物', 'CONTAINS', 50, '包含购字'),
-('CATEGORY', '房', '住房', 'CONTAINS', 50, '包含房字');
+-- 分类映射
+INSERT INTO bill_data_clean_rule (rule_type, match_fields, target_value, priority, remark) VALUES
+('CATEGORY', '{"category":"吃饭"}', '餐饮', 100, '餐饮'),
+('CATEGORY', '{"category":"打车"}', '交通', 100, '交通'),
+('CATEGORY', '{"category":"购物"}', '购物', 100, '购物');
+
+-- 默认分类
+INSERT INTO bill_data_clean_rule (rule_type, match_fields, target_value, priority, remark) VALUES
+('CATEGORY', '{"transaction_type":"EXPENSE"}', '其他支出', 0, '支出默认'),
+('CATEGORY', '{"transaction_type":"INCOME"}', '其他收入', 0, '收入默认');
+
+-- 备注映射
+INSERT INTO bill_data_clean_rule (rule_type, match_fields, target_value, priority, remark) VALUES
+('TRANSACTION_DESC', '{"transaction_desc":"美团外卖"}', '外卖订单', 100, '美团外卖'),
+('TRANSACTION_DESC', '{"transaction_desc":"滴滴出行"}', '打车费用', 100, '滴滴出行');
 ```
 
 ### 使用场景
 
-**查询支付渠道清洗规则**：
-```sql
-SELECT * FROM bill_data_clean_rule 
-WHERE rule_type = 'PAYMENT_CHANNEL' 
-  AND enabled = '1' 
-  AND deleted = '0'
-ORDER BY priority DESC, id ASC;
-```
-
-**查询分类清洗规则**：
-```sql
-SELECT * FROM bill_data_clean_rule 
-WHERE rule_type = 'CATEGORY' 
-  AND enabled = '1' 
-  AND deleted = '0'
-ORDER BY priority DESC, id ASC;
-```
-
-**精确匹配**：
+**支付渠道清洗**：
 ```sql
 SELECT target_value FROM bill_data_clean_rule 
-WHERE rule_type = ? 
-  AND source_value = ? 
-  AND match_type = 'EXACT'
+WHERE rule_type = 'PAYMENT_CHANNEL' 
+  AND JSON_EXTRACT(match_fields, '$.payment_channel') = '微信'
   AND enabled = '1' 
   AND deleted = '0'
 ORDER BY priority DESC
 LIMIT 1;
 ```
 
-**包含匹配**：
+**分类清洗（多字段匹配）**：
+```sql
+-- 先匹配具体分类
+SELECT target_value FROM bill_data_clean_rule 
+WHERE rule_type = 'CATEGORY' 
+  AND JSON_EXTRACT(match_fields, '$.category') = '吃饭'
+  AND JSON_EXTRACT(match_fields, '$.transaction_type') = 'EXPENSE'
+  AND enabled = '1' 
+  AND deleted = '0'
+ORDER BY priority DESC
+LIMIT 1;
+
+-- 匹配失败则使用默认分类
+SELECT target_value FROM bill_data_clean_rule 
+WHERE rule_type = 'CATEGORY' 
+  AND JSON_EXTRACT(match_fields, '$.transaction_type') = 'EXPENSE'
+  AND JSON_LENGTH(match_fields) = 1
+  AND enabled = '1' 
+  AND deleted = '0'
+ORDER BY priority DESC
+LIMIT 1;
+```
+
+**备注清洗**：
 ```sql
 SELECT target_value FROM bill_data_clean_rule 
-WHERE rule_type = ? 
-  AND ? LIKE CONCAT('%', source_value, '%')
-  AND match_type = 'CONTAINS'
+WHERE rule_type = 'TRANSACTION_DESC' 
+  AND JSON_EXTRACT(match_fields, '$.transaction_desc') = '美团外卖'
   AND enabled = '1' 
   AND deleted = '0'
 ORDER BY priority DESC
@@ -894,16 +900,29 @@ LIMIT 1;
 **rule_type 字段**：
 - PAYMENT_CHANNEL：支付渠道映射规则
 - CATEGORY：分类映射规则
+- TRANSACTION_DESC：备注映射规则
 
-**match_type 字段**：
-- EXACT：精确匹配，source_value = 导入值
-- FUZZY：模糊匹配，source_value LIKE '%导入值%'
-- CONTAINS：包含匹配，导入值包含 source_value
+**match_fields 字段**：
+- JSON格式，支持多字段组合匹配
+- 所有字段必须同时匹配才返回目标值
+- 支持的字段：payment_channel、category、transaction_type、transaction_desc
 
 **priority 字段**：
 - 数字越大优先级越高
-- 建议：精确匹配 100，包含匹配 50，模糊匹配 30
+- 建议：具体规则 100，默认规则 0
 - 相同优先级按 id 升序
+
+### 清洗流程
+
+```
+1. 交易类型清洗（根据金额判断）
+   ↓
+2. 分类清洗（根据 category + transaction_type 匹配）
+   ↓
+3. 支付渠道清洗（根据 payment_channel 匹配）
+   ↓
+4. 备注清洗（根据 transaction_desc 匹配）
+```
 
 ---
 
