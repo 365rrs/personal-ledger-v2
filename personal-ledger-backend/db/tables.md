@@ -17,6 +17,8 @@ personal-ledger
 |------|------|------|
 | bill | 账单表 | 待创建 |
 | bill_category | 分类表 | 待创建 |
+| bill_payment_channel | 支付渠道表 | 待创建 |
+| bill_data_clean_rule | 数据清洗规则表 | 待创建 |
 | bill_budget | 预算表 | 待创建 |
 | bill_tag | 标签表 | 待创建 |
 | bill_tag_relation | 账单标签关联表 | 待创建 |
@@ -592,7 +594,320 @@ ORDER BY c1.sort_order, c2.sort_order;
 
 ---
 
-## 7. bill_budget（预算表）
+## 7. bill_payment_channel（支付渠道表）
+
+### 表说明
+管理账单的支付渠道
+
+### 字段定义
+
+| 字段名 | 类型 | 长度 | 允许NULL | 默认值 | 说明 |
+|--------|------|------|----------|--------|------|
+| id | BIGINT | - | NO | AUTO_INCREMENT | 主键ID |
+| channel_name | VARCHAR | 50 | NO | - | 渠道名称 |
+| channel_type | VARCHAR | 20 | YES | NULL | 渠道类型：CASH-现金，BANK_CARD-银行卡，CREDIT_CARD-信用卡，E_WALLET-电子钱包，OTHER-其他 |
+| icon | VARCHAR | 50 | YES | NULL | 图标 |
+| enabled | VARCHAR | 1 | NO | '1' | 是否启用：0-禁用，1-启用 |
+| sort_order | INT | - | NO | 0 | 排序序号 |
+| creator_code | VARCHAR | 50 | YES | NULL | 创建人编码 |
+| updater_code | VARCHAR | 50 | YES | NULL | 更新人编码 |
+| creator_name | VARCHAR | 50 | YES | NULL | 创建人姓名 |
+| updater_name | VARCHAR | 50 | YES | NULL | 更新人姓名 |
+| create_time | DATETIME | - | NO | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | - | NO | CURRENT_TIMESTAMP | 更新时间 |
+| deleted | VARCHAR | 1 | NO | '0' | 逻辑删除标识：0-未删除，1-已删除 |
+
+### 索引定义
+
+| 索引名 | 索引类型 | 字段 | 说明 |
+|--------|----------|------|------|
+| PRIMARY | 主键索引 | id | 主键 |
+| uk_channel_name | 唯一索引 | channel_name | 渠道名称唯一 |
+| idx_channel_type | 普通索引 | channel_type | 渠道类型查询 |
+| idx_enabled | 普通索引 | enabled | 启用状态查询 |
+| idx_sort_order | 普通索引 | sort_order | 排序查询 |
+
+### 建表SQL
+
+```sql
+CREATE TABLE IF NOT EXISTS bill_payment_channel (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    channel_name VARCHAR(50) NOT NULL COMMENT '渠道名称',
+    channel_type VARCHAR(20) COMMENT '渠道类型：CASH-现金，BANK_CARD-银行卡，CREDIT_CARD-信用卡，E_WALLET-电子钱包，OTHER-其他',
+    icon VARCHAR(50) COMMENT '图标',
+    enabled VARCHAR(1) NOT NULL DEFAULT '1' COMMENT '是否启用：0-禁用，1-启用',
+    sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+    creator_code VARCHAR(50) COMMENT '创建人编码',
+    updater_code VARCHAR(50) COMMENT '更新人编码',
+    creator_name VARCHAR(50) COMMENT '创建人姓名',
+    updater_name VARCHAR(50) COMMENT '更新人姓名',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted VARCHAR(1) DEFAULT '0' COMMENT '逻辑删除标识：0-未删除，1-已删除',
+    UNIQUE KEY uk_channel_name (channel_name),
+    INDEX idx_channel_type (channel_type),
+    INDEX idx_enabled (enabled),
+    INDEX idx_sort_order (sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付渠道表';
+```
+
+### 预设数据
+
+```sql
+-- 现金类
+INSERT INTO bill_payment_channel (channel_name, channel_type, icon, sort_order) VALUES
+('现金', 'CASH', 'icon-cash', 1);
+
+-- 银行卡类
+INSERT INTO bill_payment_channel (channel_name, channel_type, icon, sort_order) VALUES
+('工商银行', 'BANK_CARD', 'icon-icbc', 2),
+('建设银行', 'BANK_CARD', 'icon-ccb', 3),
+('农业银行', 'BANK_CARD', 'icon-abc', 4),
+('中国银行', 'BANK_CARD', 'icon-boc', 5),
+('招商银行', 'BANK_CARD', 'icon-cmb', 6);
+
+-- 信用卡类
+INSERT INTO bill_payment_channel (channel_name, channel_type, icon, sort_order) VALUES
+('信用卡', 'CREDIT_CARD', 'icon-credit-card', 7);
+
+-- 电子钱包类
+INSERT INTO bill_payment_channel (channel_name, channel_type, icon, sort_order) VALUES
+('微信支付', 'E_WALLET', 'icon-wechat', 8),
+('支付宝', 'E_WALLET', 'icon-alipay', 9),
+('云闪付', 'E_WALLET', 'icon-unionpay', 10);
+
+-- 其他
+INSERT INTO bill_payment_channel (channel_name, channel_type, icon, sort_order) VALUES
+('其他渠道', 'OTHER', 'icon-other', 99);
+```
+
+### 使用场景
+
+**查询所有启用的渠道**：
+```sql
+SELECT * FROM bill_payment_channel 
+WHERE enabled = '1' AND deleted = '0'
+ORDER BY sort_order;
+```
+
+**按类型查询渠道**：
+```sql
+SELECT * FROM bill_payment_channel 
+WHERE channel_type = 'E_WALLET' AND enabled = '1' AND deleted = '0'
+ORDER BY sort_order;
+```
+
+**查询渠道使用统计**：
+```sql
+SELECT 
+    pc.id,
+    pc.channel_name,
+    pc.channel_type,
+    COUNT(b.id) AS usage_count,
+    SUM(CASE WHEN b.transaction_type = 'INCOME' THEN b.income_amount ELSE 0 END) AS total_income,
+    SUM(CASE WHEN b.transaction_type = 'EXPENSE' THEN b.expense_amount ELSE 0 END) AS total_expense
+FROM bill_payment_channel pc
+LEFT JOIN bill b ON pc.channel_name = b.payment_channel 
+    AND b.deleted = '0'
+    AND b.transaction_date BETWEEN ? AND ?
+WHERE pc.enabled = '1' AND pc.deleted = '0'
+GROUP BY pc.id, pc.channel_name, pc.channel_type
+ORDER BY usage_count DESC;
+```
+
+### 字段说明
+
+**channel_type 字段**：
+- 用于对渠道进行分类
+- 可选字段，用户可以不选择类型
+- 前端可以按类型分组展示渠道
+
+**enabled 字段**：
+- 用于控制渠道是否可用
+- 禁用后的渠道不在前端显示，但不删除数据
+- 已使用该渠道的账单仍然保留渠道信息
+- 可以重新启用
+
+### 与账单表的关系
+
+- bill.payment_channel 字段存储渠道名称（VARCHAR）
+- 通过渠道名称关联 bill_payment_channel.channel_name
+- 这种设计允许：
+  - 账单记录保留历史渠道信息（即使渠道被删除）
+  - 灵活修改渠道名称而不影响历史数据
+  - 支持用户自由输入渠道名称（不强制选择预设渠道）
+
+---
+
+## 8. bill_data_clean_rule（数据清洗规则表）
+
+### 表说明
+配置数据清洗的映射规则，用于账单导入时的数据清洗
+
+### 字段定义
+
+| 字段名 | 类型 | 长度 | 允许NULL | 默认值 | 说明 |
+|--------|------|------|----------|--------|------|
+| id | BIGINT | - | NO | AUTO_INCREMENT | 主键ID |
+| rule_type | VARCHAR | 50 | NO | - | 规则类型：PAYMENT_CHANNEL-支付渠道，CATEGORY-分类 |
+| source_value | VARCHAR | 200 | NO | - | 原始值 |
+| target_value | VARCHAR | 200 | NO | - | 目标值 |
+| match_type | VARCHAR | 20 | NO | 'EXACT' | 匹配类型：EXACT-精确匹配，FUZZY-模糊匹配，CONTAINS-包含匹配 |
+| priority | INT | - | NO | 0 | 优先级（数字越大优先级越高） |
+| enabled | VARCHAR | 1 | NO | '1' | 是否启用：0-禁用，1-启用 |
+| remark | VARCHAR | 500 | YES | NULL | 备注说明 |
+| creator_code | VARCHAR | 50 | YES | NULL | 创建人编码 |
+| updater_code | VARCHAR | 50 | YES | NULL | 更新人编码 |
+| creator_name | VARCHAR | 50 | YES | NULL | 创建人姓名 |
+| updater_name | VARCHAR | 50 | YES | NULL | 更新人姓名 |
+| create_time | DATETIME | - | NO | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | - | NO | CURRENT_TIMESTAMP | 更新时间 |
+| deleted | VARCHAR | 1 | NO | '0' | 逻辑删除标识：0-未删除，1-已删除 |
+
+### 索引定义
+
+| 索引名 | 索引类型 | 字段 | 说明 |
+|--------|----------|------|------|
+| PRIMARY | 主键索引 | id | 主键 |
+| idx_rule_type | 普通索引 | rule_type | 规则类型查询 |
+| idx_source_value | 普通索引 | source_value | 原始值查询 |
+| idx_enabled | 普通索引 | enabled | 启用状态查询 |
+
+### 建表SQL
+
+```sql
+CREATE TABLE IF NOT EXISTS bill_data_clean_rule (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    rule_type VARCHAR(50) NOT NULL COMMENT '规则类型：PAYMENT_CHANNEL-支付渠道，CATEGORY-分类',
+    source_value VARCHAR(200) NOT NULL COMMENT '原始值',
+    target_value VARCHAR(200) NOT NULL COMMENT '目标值',
+    match_type VARCHAR(20) NOT NULL DEFAULT 'EXACT' COMMENT '匹配类型：EXACT-精确匹配，FUZZY-模糊匹配，CONTAINS-包含匹配',
+    priority INT NOT NULL DEFAULT 0 COMMENT '优先级（数字越大优先级越高）',
+    enabled VARCHAR(1) NOT NULL DEFAULT '1' COMMENT '是否启用：0-禁用，1-启用',
+    remark VARCHAR(500) COMMENT '备注说明',
+    creator_code VARCHAR(50) COMMENT '创建人编码',
+    updater_code VARCHAR(50) COMMENT '更新人编码',
+    creator_name VARCHAR(50) COMMENT '创建人姓名',
+    updater_name VARCHAR(50) COMMENT '更新人姓名',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted VARCHAR(1) DEFAULT '0' COMMENT '逻辑删除标识：0-未删除，1-已删除',
+    INDEX idx_rule_type (rule_type),
+    INDEX idx_source_value (source_value),
+    INDEX idx_enabled (enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据清洗规则表';
+```
+
+### 预设数据
+
+```sql
+-- 支付渠道映射规则
+INSERT INTO bill_data_clean_rule (rule_type, source_value, target_value, match_type, priority, remark) VALUES
+-- 精确匹配
+('PAYMENT_CHANNEL', '微信', '微信支付', 'EXACT', 100, '微信别名'),
+('PAYMENT_CHANNEL', '微信钱包', '微信支付', 'EXACT', 100, '微信钱包别名'),
+('PAYMENT_CHANNEL', 'WeChat', '微信支付', 'EXACT', 100, '微信英文名'),
+('PAYMENT_CHANNEL', '支付宝钱包', '支付宝', 'EXACT', 100, '支付宝钱包别名'),
+('PAYMENT_CHANNEL', 'Alipay', '支付宝', 'EXACT', 100, '支付宝英文名'),
+('PAYMENT_CHANNEL', '工行', '工商银行', 'EXACT', 100, '工商银行简称'),
+('PAYMENT_CHANNEL', '建行', '建设银行', 'EXACT', 100, '建设银行简称'),
+('PAYMENT_CHANNEL', '农行', '农业银行', 'EXACT', 100, '农业银行简称'),
+('PAYMENT_CHANNEL', '中行', '中国银行', 'EXACT', 100, '中国银行简称'),
+('PAYMENT_CHANNEL', '招行', '招商银行', 'EXACT', 100, '招商银行简称'),
+('PAYMENT_CHANNEL', '现金支付', '现金', 'EXACT', 100, '现金别名'),
+('PAYMENT_CHANNEL', 'Cash', '现金', 'EXACT', 100, '现金英文名'),
+-- 包含匹配
+('PAYMENT_CHANNEL', '微信', '微信支付', 'CONTAINS', 50, '包含微信关键字'),
+('PAYMENT_CHANNEL', '支付宝', '支付宝', 'CONTAINS', 50, '包含支付宝关键字'),
+('PAYMENT_CHANNEL', '银行', '银行卡', 'CONTAINS', 30, '包含银行关键字');
+
+-- 分类映射规则
+INSERT INTO bill_data_clean_rule (rule_type, source_value, target_value, match_type, priority, remark) VALUES
+-- 精确匹配
+('CATEGORY', '吃饭', '餐饮', 'EXACT', 100, '餐饮别名'),
+('CATEGORY', '吃', '餐饮', 'EXACT', 100, '餐饮别名'),
+('CATEGORY', '饭', '餐饮', 'EXACT', 100, '餐饮别名'),
+('CATEGORY', '打车', '交通', 'EXACT', 100, '交通别名'),
+('CATEGORY', '出行', '交通', 'EXACT', 100, '交通别名'),
+('CATEGORY', '买菜', '购物', 'EXACT', 100, '购物别名'),
+('CATEGORY', '购', '购物', 'EXACT', 100, '购物别名'),
+('CATEGORY', '玩', '娱乐', 'EXACT', 100, '娱乐别名'),
+('CATEGORY', '房租', '住房', 'EXACT', 100, '住房别名'),
+('CATEGORY', '看病', '医疗', 'EXACT', 100, '医疗别名'),
+('CATEGORY', '学习', '教育', 'EXACT', 100, '教育别名'),
+('CATEGORY', '工资收入', '工资', 'EXACT', 100, '工资别名'),
+('CATEGORY', '奖金收入', '奖金', 'EXACT', 100, '奖金别名'),
+-- 包含匹配
+('CATEGORY', '餐', '餐饮', 'CONTAINS', 50, '包含餐字'),
+('CATEGORY', '饮', '餐饮', 'CONTAINS', 50, '包含饮字'),
+('CATEGORY', '车', '交通', 'CONTAINS', 50, '包含车字'),
+('CATEGORY', '购', '购物', 'CONTAINS', 50, '包含购字'),
+('CATEGORY', '房', '住房', 'CONTAINS', 50, '包含房字');
+```
+
+### 使用场景
+
+**查询支付渠道清洗规则**：
+```sql
+SELECT * FROM bill_data_clean_rule 
+WHERE rule_type = 'PAYMENT_CHANNEL' 
+  AND enabled = '1' 
+  AND deleted = '0'
+ORDER BY priority DESC, id ASC;
+```
+
+**查询分类清洗规则**：
+```sql
+SELECT * FROM bill_data_clean_rule 
+WHERE rule_type = 'CATEGORY' 
+  AND enabled = '1' 
+  AND deleted = '0'
+ORDER BY priority DESC, id ASC;
+```
+
+**精确匹配**：
+```sql
+SELECT target_value FROM bill_data_clean_rule 
+WHERE rule_type = ? 
+  AND source_value = ? 
+  AND match_type = 'EXACT'
+  AND enabled = '1' 
+  AND deleted = '0'
+ORDER BY priority DESC
+LIMIT 1;
+```
+
+**包含匹配**：
+```sql
+SELECT target_value FROM bill_data_clean_rule 
+WHERE rule_type = ? 
+  AND ? LIKE CONCAT('%', source_value, '%')
+  AND match_type = 'CONTAINS'
+  AND enabled = '1' 
+  AND deleted = '0'
+ORDER BY priority DESC
+LIMIT 1;
+```
+
+### 字段说明
+
+**rule_type 字段**：
+- PAYMENT_CHANNEL：支付渠道映射规则
+- CATEGORY：分类映射规则
+
+**match_type 字段**：
+- EXACT：精确匹配，source_value = 导入值
+- FUZZY：模糊匹配，source_value LIKE '%导入值%'
+- CONTAINS：包含匹配，导入值包含 source_value
+
+**priority 字段**：
+- 数字越大优先级越高
+- 建议：精确匹配 100，包含匹配 50，模糊匹配 30
+- 相同优先级按 id 升序
+
+---
+
+## 9. bill_budget（预算表）
 
 ### 表说明
 设置每月各分类的预算额度
