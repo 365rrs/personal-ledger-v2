@@ -26,6 +26,16 @@ const routes = [
         path: 'statistics',
         name: 'Statistics',
         component: () => import('../views/Statistics.vue')
+      },
+      {
+        path: 'bill-import',
+        name: 'BillImport',
+        component: () => import('../views/BillImport.vue')
+      },
+      {
+        path: 'bill-import/detail/:id',
+        name: 'BillImportDetail',
+        component: () => import('../views/BillImportDetail.vue')
       }
     ]
   }

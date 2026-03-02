@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS bill_import_detail (
     original_data TEXT COMMENT '原始数据（JSON格式）',
     type VARCHAR(20) COMMENT '类型',
     amount DECIMAL(10, 2) COMMENT '金额',
-    category VARCHAR(50) COMMENT '分类',
     description VARCHAR(500) COMMENT '描述',
     transaction_time DATETIME COMMENT '交易时间',
     import_status VARCHAR(20) NOT NULL COMMENT '导入状态：SUCCESS-成功，FAILED-失败',

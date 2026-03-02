@@ -17,6 +17,10 @@
           <el-icon><Tickets /></el-icon>
           <span>账单管理</span>
         </el-menu-item>
+        <el-menu-item index="/bill-import">
+          <el-icon><Upload /></el-icon>
+          <span>账单导入</span>
+        </el-menu-item>
         <el-menu-item index="/category">
           <el-icon><Menu /></el-icon>
           <span>分类管理</span>
@@ -42,7 +46,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Tickets, Menu, DataAnalysis } from '@element-plus/icons-vue'
+import { HomeFilled, Tickets, Menu, DataAnalysis, Upload } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -52,6 +56,7 @@ const pageTitle = computed(() => {
   const titles = {
     '/dashboard': '首页',
     '/ledger': '账单管理',
+    '/bill-import': '账单导入',
     '/category': '分类管理',
     '/statistics': '统计分析'
   }
