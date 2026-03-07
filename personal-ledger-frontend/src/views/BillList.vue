@@ -34,17 +34,22 @@
       </el-form>
 
       <!-- 统计信息 -->
-      <el-descriptions :column="3" border class="statistics">
-        <el-descriptions-item label="收入">
-          <span style="color: #67c23a; font-weight: bold;">¥{{ statistics.totalIncome || 0 }}</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="支出">
-          <span style="color: #f56c6c; font-weight: bold;">¥{{ statistics.totalExpense || 0 }}</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="结余">
-          <span style="color: #409eff; font-weight: bold;">¥{{ statistics.balance || 0 }}</span>
-        </el-descriptions-item>
-      </el-descriptions>
+      <div class="statistics-cards">
+        <div class="stat-card stat-card-balance">
+          <div class="stat-label">结余</div>
+          <div class="stat-value">{{ statistics.balance || 0 }}</div>
+        </div>
+        <div class="stat-operator">=</div>
+        <div class="stat-card stat-card-income">
+          <div class="stat-label">收入</div>
+          <div class="stat-value">{{ statistics.totalIncome || 0 }}</div>
+        </div>
+        <div class="stat-operator">-</div>
+        <div class="stat-card stat-card-expense">
+          <div class="stat-label">支出</div>
+          <div class="stat-value">{{ statistics.totalExpense || 0 }}</div>
+        </div>
+      </div>
 
       <!-- 数据表格 -->
       <el-table :data="tableData" stripe style="width: 100%">
@@ -423,8 +428,72 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.statistics {
+.statistics-cards {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+}
+
+.stat-card {
+  flex: 0 0 auto;
+  width: 240px;
+  height: 90px;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-card-balance {
+  /* 移除左侧彩色边框 */
+}
+
+.stat-card-income {
+  /* 移除左侧彩色边框 */
+}
+
+.stat-card-expense {
+  /* 移除左侧彩色边框 */
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.stat-card-balance .stat-value {
+  color: #409eff;
+}
+
+.stat-card-income .stat-value {
+  color: #67c23a;
+}
+
+.stat-card-expense .stat-value {
+  color: #f56c6c;
+}
+
+.stat-operator {
+  font-size: 20px;
+  font-weight: bold;
+  color: #909399;
+  margin: 0 4px;
 }
 
 .el-pagination {
