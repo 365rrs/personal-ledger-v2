@@ -25,8 +25,22 @@ public class BillVO {
     private String transactionType;
     private String transactionDesc;
     private String paymentChannel;
+    /**
+     * 分类名称（兼容旧版本）
+     */
     private String category;
+    /**
+     * 分类 ID
+     */
+    private Long categoryId;
+    /**
+     * 二级分类名称（兼容旧版本）
+     */
     private String subCategory;
+    /**
+     * 二级分类 ID
+     */
+    private Long subCategoryId;
     private String manualRemark;
     private String includeInStatistics;
     private String manualEntry;

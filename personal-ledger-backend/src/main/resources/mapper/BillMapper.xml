@@ -13,8 +13,12 @@
     <result column="transaction_type" jdbcType="VARCHAR" property="transactionType" />
     <result column="transaction_desc" jdbcType="VARCHAR" property="transactionDesc" />
     <result column="payment_channel" jdbcType="VARCHAR" property="paymentChannel" />
+    <!-- 同时映射 category 和 category_id 字段 -->
     <result column="category" jdbcType="VARCHAR" property="category" />
+    <result column="category_id" jdbcType="BIGINT" property="categoryId" />
+    <!-- 同时映射 sub_category 和 sub_category_id 字段 -->
     <result column="sub_category" jdbcType="VARCHAR" property="subCategory" />
+    <result column="sub_category_id" jdbcType="BIGINT" property="subCategoryId" />
     <result column="manual_remark" jdbcType="VARCHAR" property="manualRemark" />
     <result column="include_in_statistics" jdbcType="VARCHAR" property="includeInStatistics" />
     <result column="manual_entry" jdbcType="VARCHAR" property="manualEntry" />
@@ -30,7 +34,7 @@
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     id, transaction_date, transaction_time, income_amount, expense_amount, amount_type, 
-    transaction_type, transaction_desc, payment_channel, category, sub_category, manual_remark, 
+    transaction_type, transaction_desc, payment_channel, category, category_id, sub_category, sub_category_id, manual_remark, 
     include_in_statistics, manual_entry, data_hash, creator_code, updater_code, creator_name, 
     updater_name, create_time, update_time, deleted
   </sql>
@@ -45,12 +49,18 @@
             AND transaction_type = #{dto.transactionType}
         </if>
         
-        <!-- 分类 -->
+        <!-- 分类（支持 categoryId 和 category 两种方式） -->
+        <if test="dto.categoryId != null">
+            AND category_id = #{dto.categoryId}
+        </if>
         <if test="dto.category != null and dto.category != ''">
             AND category = #{dto.category}
         </if>
         
-        <!-- 二级分类 -->
+        <!-- 二级分类（支持 subCategoryId 和 sub_category 两种方式） -->
+        <if test="dto.subCategoryId != null">
+            AND sub_category_id = #{dto.subCategoryId}
+        </if>
         <if test="dto.subCategory != null and dto.subCategory != ''">
             AND sub_category = #{dto.subCategory}
         </if>
@@ -139,16 +149,18 @@
     <update id="updateBill" parameterType="com.ledger.entity.Bill">
         UPDATE bill
         <set>
-            payment_channel       = #{paymentChannel},
-            category              = #{category},
-            sub_category          = #{subCategory},
-            manual_remark         = #{manualRemark},
-            include_in_statistics = #{includeInStatistics},
-            updater_code          = #{updaterCode},
-            updater_name          = #{updaterName},
+            payment_channel       = #{paymentChannel,jdbcType=VARCHAR},
+            category              = #{category,jdbcType=VARCHAR},
+            category_id           = #{categoryId,jdbcType=BIGINT},
+            sub_category          = #{subCategory,jdbcType=VARCHAR},
+            sub_category_id       = #{subCategoryId,jdbcType=BIGINT},
+            manual_remark         = #{manualRemark,jdbcType=VARCHAR},
+            include_in_statistics = #{includeInStatistics,jdbcType=VARCHAR},
+            updater_code          = #{updaterCode,jdbcType=VARCHAR},
+            updater_name          = #{updaterName,jdbcType=VARCHAR},
             update_time           = NOW(),
         </set>
-        WHERE id = #{id}
+        WHERE id = #{id,jdbcType=BIGINT}
           AND deleted = '0'
     </update>
 

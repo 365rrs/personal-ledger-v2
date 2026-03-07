@@ -85,9 +85,18 @@ public class BillServiceImpl implements BillService {
             throw new BusinessException("账单不存在");
         }
 
+        // 将 DTO 转换为实体类
         Bill updateBill = converter.toEntity(dto);
+        
+        // 打印日志查看分类字段是否正确传递
+        log.info("更新账单 - ID: {}, categoryId: {}, category: {}, subCategoryId: {}, subCategory: {}", 
+                dto.getId(), dto.getCategoryId(), dto.getCategory(), dto.getSubCategoryId(), dto.getSubCategory());
+        log.info("转换后的实体 - categoryId: {}, category: {}, subCategoryId: {}, subCategory: {}", 
+                updateBill.getCategoryId(), updateBill.getCategory(), updateBill.getSubCategoryId(), updateBill.getSubCategory());
 
         billMapper.updateBill(updateBill);
+        
+        log.info("账单更新成功 - ID: {}", dto.getId());
 
         // 处理标签关联关系
         if (dto.getTagIds() != null) {

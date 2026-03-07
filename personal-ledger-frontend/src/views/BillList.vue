@@ -60,10 +60,37 @@
           </el-select>
           
           <span style="margin-right: 12px;">分类：</span>
-          <el-input v-model="queryForm.category" placeholder="请输入分类" clearable style="width: 150px; margin-right: 12px;" />
+          <el-select 
+            v-model="queryForm.categoryId" 
+            placeholder="请选择分类" 
+            filterable
+            clearable
+            @change="handleCategoryChange"
+            style="width: 150px; margin-right: 12px;"
+          >
+            <el-option
+              v-for="cat in categoryList"
+              :key="cat.id"
+              :label="cat.categoryName"
+              :value="cat.id"
+            />
+          </el-select>
           
           <span style="margin-right: 12px;">二级分类：</span>
-          <el-input v-model="queryForm.subCategory" placeholder="请输入二级分类" clearable style="width: 150px;" />
+          <el-select 
+            v-model="queryForm.subCategoryId" 
+            placeholder="请选择二级分类" 
+            filterable
+            clearable
+            style="width: 150px;"
+          >
+            <el-option
+              v-for="subCat in currentSubCategoryList"
+              :key="subCat.id"
+              :label="subCat.categoryName"
+              :value="subCat.id"
+            />
+          </el-select>
         </div>
         
         <!-- 折叠区域：更多查询条件 -->
@@ -375,8 +402,40 @@
         <el-form-item label="金额" prop="amount">
           <el-input-number v-model="form.amount" :min="0.01" :precision="2" :step="1" :disabled="isViewMode || isEditMode" />
         </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-input v-model="form.category" placeholder="请输入分类" :disabled="isViewMode" />
+        <el-form-item label="分类" prop="categoryId">
+          <el-select 
+            v-model="form.categoryId" 
+            placeholder="请选择分类" 
+            filterable
+            clearable
+            @change="handleFormCategoryChange"
+            :disabled="isViewMode"
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="cat in categoryList"
+              :key="cat.id"
+              :label="cat.categoryName"
+              :value="cat.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="二级分类" prop="subCategoryId">
+          <el-select 
+            v-model="form.subCategoryId" 
+            placeholder="请选择二级分类" 
+            filterable
+            clearable
+            :disabled="isViewMode"
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="subCat in formSubCategoryList"
+              :key="subCat.id"
+              :label="subCat.categoryName"
+              :value="subCat.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="交易日期" prop="transactionDate">
           <el-date-picker
@@ -474,6 +533,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Setting } from '@element-plus/icons-vue'
 import { pageBills, getStatistics, createBill, updateBill, deleteBill } from '@/api/bill'
 import { getTagList } from '@/api/tag'
+import { getCategoryList } from '@/api/category'
 
 // 列设置 - 所有可用列
 const allColumns = [
@@ -553,8 +613,8 @@ const queryForm = reactive({
   current: 1,
   size: 20,
   transactionType: '',
-  category: '',
-  subCategory: '',
+  categoryId: null,  // 分类 ID
+  subCategoryId: null,  // 二级分类 ID
   paymentChannel: '',
   amountType: '',
   includeInStatistics: '',
@@ -584,6 +644,12 @@ const statistics = ref({
 // 标签列表
 const tagList = ref([])
 
+// 分类列表
+const categoryList = ref([])
+
+// 当前选中的分类 ID（用于筛选二级分类）
+const selectedCategoryId = ref(null)
+
 // 加载标签列表（包含停用和启用的）
 const loadTagList = async () => {
   try {
@@ -594,10 +660,49 @@ const loadTagList = async () => {
   }
 }
 
+// 加载分类列表
+const loadCategoryList = async () => {
+  try {
+    const res = await getCategoryList('', '')  // 获取所有分类
+    categoryList.value = (res.data || []).filter(cat => !cat.parentId)  // 只取一级分类
+  } catch (error) {
+    console.error('加载分类列表失败:', error)
+  }
+}
+
 // 获取启用的标签列表（用于编辑时选择）
 const getEnabledTagList = computed(() => {
   return tagList.value.filter(tag => tag.tagStatus === 'enable')
 })
+
+// 当前分类下的二级分类列表
+const currentSubCategoryList = computed(() => {
+  if (!selectedCategoryId.value) {
+    return []
+  }
+  const parent = categoryList.value.find(cat => cat.id === selectedCategoryId.value)
+  return parent && parent.children ? parent.children : []
+})
+
+// 表单中的二级分类列表（根据选中的一级分类动态计算）
+const formSubCategoryList = computed(() => {
+  if (!form.categoryId) {
+    return []
+  }
+  const parent = categoryList.value.find(cat => cat.id === form.categoryId)
+  return parent && parent.children ? parent.children : []
+})
+
+// 分类变化处理
+const handleCategoryChange = (categoryId) => {
+  selectedCategoryId.value = categoryId
+  queryForm.subCategoryId = null  // 清空二级分类选择
+}
+
+// 分类变化处理（表单）
+const handleFormCategoryChange = (categoryId) => {
+  form.subCategoryId = null  // 清空二级分类选择
+}
 
 // 根据标签 ID 获取标签名称
 const getTagName = (tagId) => {
@@ -622,7 +727,8 @@ const form = reactive({
   amountType: 'EXPENSE',
   transactionType: '',
   amount: null,
-  category: '',
+  categoryId: null,  // 分类 ID
+  subCategoryId: null,  // 二级分类 ID
   transactionDate: '',
   transactionTime: '',
   paymentChannel: '',
@@ -635,7 +741,7 @@ const form = reactive({
 const rules = {
   amountType: [{ required: true, message: '请选择金额类型', trigger: 'change' }],
   amount: [{ required: true, message: '请输入金额', trigger: 'blur' }],
-  category: [{ required: true, message: '请输入分类', trigger: 'blur' }],
+  categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   transactionDate: [{ required: true, message: '请选择交易日期', trigger: 'change' }]
 }
 
@@ -777,9 +883,10 @@ const handleQuery = () => {
 
 // 重置
 const handleReset = () => {
+  queryForm.current = 1
   queryForm.transactionType = ''
-  queryForm.category = ''
-  queryForm.subCategory = ''
+  queryForm.categoryId = null
+  queryForm.subCategoryId = null
   queryForm.paymentChannel = ''
   queryForm.amountType = ''
   queryForm.includeInStatistics = ''
@@ -791,6 +898,7 @@ const handleReset = () => {
   queryForm.endDate = ''
   dateRange.value = []
   quickDate.value = 'month' // 重置时恢复默认值为本月
+  selectedCategoryId.value = null  // 清空选中的分类
   handleQuickDateChange('month') // 同时更新查询条件
   showAdvancedSearch.value = false // 收起高级搜索
   handleQuery()
@@ -833,7 +941,8 @@ const handleEdit = (row) => {
     amountType: row.amountType,
     transactionType: row.transactionType,
     amount: row.amountType === 'INCOME' ? row.incomeAmount : row.expenseAmount,
-    category: row.category,
+    categoryId: row.categoryId,
+    subCategoryId: row.subCategoryId,
     transactionDate: row.transactionDate,
     transactionTime: row.transactionTime,
     paymentChannel: row.paymentChannel,
@@ -855,8 +964,8 @@ const handleView = (row) => {
     amountType: row.amountType,
     transactionType: row.transactionType,
     amount: row.amountType === 'INCOME' ? row.incomeAmount : row.expenseAmount,
-    category: row.category,
-    subCategory: row.subCategory,
+    categoryId: row.categoryId,
+    subCategoryId: row.subCategoryId,
     transactionDate: row.transactionDate,
     transactionTime: row.transactionTime,
     paymentChannel: row.paymentChannel,
@@ -888,19 +997,45 @@ const handleSubmit = async () => {
   try {
     await formRef.value.validate()
     
+    // 根据 categoryId 查找分类名称
+    let categoryName = ''
+    let subCategoryName = ''
+    
+    if (form.categoryId) {
+      const parent = categoryList.value.find(cat => cat.id === form.categoryId)
+      if (parent) {
+        categoryName = parent.categoryName
+      }
+    }
+    
+    if (form.subCategoryId) {
+      const parent = categoryList.value.find(cat => cat.id === form.categoryId)
+      if (parent && parent.children) {
+        const subCat = parent.children.find(sub => sub.id === form.subCategoryId)
+        if (subCat) {
+          subCategoryName = subCat.categoryName
+        }
+      }
+    }
+    
     const data = {
       id: form.id,
       amountType: form.amountType,
       transactionType: form.transactionType,
       transactionDate: form.transactionDate,
       transactionTime: form.transactionTime,
-      category: form.category,
+      categoryId: form.categoryId,
+      category: categoryName,  // 同时传递分类名称
+      subCategoryId: form.subCategoryId,
+      subCategory: subCategoryName,  // 同时传递二级分类名称
       paymentChannel: form.paymentChannel,
       transactionDesc: form.transactionDesc,
       manualRemark: form.manualRemark,
       includeInStatistics: form.includeInStatistics,
       tagIds: form.tagIds  // 标签 ID 数组
     }
+    
+    console.log('提交账单数据:', data)
     
     if (form.amountType === 'INCOME') {
       data.incomeAmount = form.amount
@@ -942,6 +1077,7 @@ onMounted(() => {
   loadColumnSettings()
   // 加载标签列表
   loadTagList()
+  loadCategoryList()  // 加载分类列表
   loadData()
   loadStatistics()
 })

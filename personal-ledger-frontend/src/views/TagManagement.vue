@@ -1,16 +1,18 @@
 <template>
-  <div class="tag-container">
-    <!-- 标题栏 -->
-    <div class="header">
-      <h2>标签管理</h2>
-      <el-button type="primary" @click="handleCreate">
-        <i class="el-icon-plus"></i> 新建标签
-      </el-button>
-    </div>
+  <div class="tag-management">
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <div class="header-left">
+            <el-icon class="header-icon"><Collection /></el-icon>
+            <span>标签管理</span>
+          </div>
+          <el-button type="primary" @click="handleCreate" :icon="Plus">+ 新建标签</el-button>
+        </div>
+      </template>
 
-    <!-- 筛选区域 -->
-    <div class="filter-area">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <!-- 筛选区域 -->
+      <el-form :inline="true" :model="queryForm" class="query-form">
         <el-form-item label="标签名称">
           <el-input 
             v-model="queryForm.tagName" 
@@ -43,7 +45,6 @@
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-    </div>
 
     <!-- 表格区域 -->
     <div class="table-area">
@@ -55,6 +56,11 @@
         v-loading="loading"
         row-key="id"
       >
+        <el-table-column label="拖拽" width="60" align="center">
+          <template #default>
+            <el-icon class="drag-handle" style="cursor: move;"><Rank /></el-icon>
+          </template>
+        </el-table-column>
         <el-table-column prop="tagName" label="标签名称" width="150" />
         <el-table-column prop="tagCategory" label="分类" width="120" />
         <el-table-column prop="tagColor" label="颜色" width="100">
@@ -66,43 +72,30 @@
           </template>
         </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
-        <el-table-column prop="tagStatus" label="状态" width="100" align="center">
+        <el-table-column prop="tagStatus" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag 
-              :type="row.tagStatus === 'enable' ? 'success' : 'info'"
-              size="small"
-            >
+            <el-tag :type="row.tagStatus === 'enable' ? 'success' : 'info'">
               {{ row.tagStatus === 'enable' ? '启用' : '停用' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="usageCount" label="使用次数" width="100" align="center" />
-        <el-table-column label="操作" fixed="right" width="280" align="center">
+        <el-table-column label="操作" fixed="right" width="280">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="primary" @click="handleToggleStatus(row)">
+            <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button 
+              :type="row.tagStatus === 'enable' ? 'warning' : 'success'" 
+              size="small" 
+              @click="handleToggleStatus(row)"
+            >
               {{ row.tagStatus === 'enable' ? '停用' : '启用' }}
             </el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-            <el-button link type="primary" @click="handleSortUp(row)" :disabled="row.sortOrder === 0">↑</el-button>
-            <el-button link type="primary" @click="handleSortDown(row)">↓</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination">
-        <el-pagination
-          v-model:current-page="queryForm.current"
-          v-model:page-size="queryForm.size"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="fetchData"
-          @current-change="fetchData"
-        />
-      </div>
     </div>
+  </el-card>
 
     <!-- 新建/编辑弹窗 -->
     <el-dialog
@@ -152,6 +145,7 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Collection, Plus, Rank } from '@element-plus/icons-vue'
 import { getTagList, getTagDetail, createTag, updateTag, deleteTag, updateTagStatus, updateTagSortOrder } from '@/api/tag'
 import Sortable from 'sortablejs'
 
@@ -216,6 +210,7 @@ const tableRef = ref(null)
 
 // 拖拽排序实例
 let sortableInstance = null
+let draggedRowData = null
 
 // 获取数据
 const fetchData = async () => {
@@ -249,36 +244,54 @@ const initSortable = () => {
     sortableInstance.destroy()
   }
   
-  // 创建 Sortable 实例
+  // 创建 Sortable 实例，使用 handle 选项只对拖拽手柄响应
   sortableInstance = new Sortable(tbody, {
     animation: 150,
+    handle: '.drag-handle',  // 只对拖拽图标响应
     ghostClass: 'sortable-ghost',
     dragClass: 'sortable-drag',
+    onStart: (evt) => {
+      console.log('拖拽开始:', { 
+        oldIndex: evt.oldIndex,
+        newIndex: evt.newIndex,
+        totalRows: Array.from(tbody.children).length 
+      })
+    },
     onEnd: async (evt) => {
+      console.log('拖拽结束:', { 
+        oldIndex: evt.oldIndex, 
+        newIndex: evt.newIndex
+      })
       await handleDragEnd(evt)
     }
   })
+  
+  console.log('拖拽排序初始化完成')
 }
 
 // 拖拽结束处理
 const handleDragEnd = async (evt) => {
   const { oldIndex, newIndex } = evt
   
+  console.log('处理拖拽结束:', { oldIndex, newIndex })
+  
   if (oldIndex === newIndex) return
   
   try {
-    // 创建新数组并重新排列
-    const newArray = [...tableData.value]
-    const [removed] = newArray.splice(oldIndex, 1)
-    newArray.splice(newIndex, 0, removed)
+    // 创建新数组并重新排列（不修改原数组）
+    const newArray = [...tableData.value].map(c => ({...c}))
+    const moved = newArray.splice(oldIndex, 1)[0]
+    newArray.splice(newIndex, 0, moved)
     
-    // 收集需要更新的标签（不直接修改原数组）
-    const updates = []
-    newArray.forEach((tag, index) => {
-      if (tag.sortOrder !== index) {
-        updates.push({ id: tag.id, sortOrder: index })
-      }
-    })
+    console.log('移动后的数组:', newArray)
+    
+    // 批量更新排序（从 1 开始）
+    const updates = newArray.map((item, idx) => ({ 
+      id: item.id,
+      sortOrder: idx + 1
+    }))
+    
+    console.log('需要更新的排序:', updates)
     
     // 批量更新数据库
     if (updates.length > 0) {
@@ -287,6 +300,9 @@ const handleDragEnd = async (evt) => {
     }
     
     ElMessage.success('排序已更新')
+    
+    // 等待一小段时间再重新加载数据，确保后端更新完成
+    await new Promise(resolve => setTimeout(resolve, 300))
     
     // 重新加载数据以刷新排序显示
     await fetchData()
@@ -482,45 +498,32 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.tag-container {
+.tag-management {
   padding: 20px;
-  background-color: #f5f7fa;
-  min-height: calc(100vh - 84px);
 }
 
-.header {
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 18px;
+}
+
+.query-form {
   margin-bottom: 20px;
-  background-color: #fff;
-  padding: 16px 20px;
-  border-radius: 4px;
-}
-
-.header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.filter-area {
-  background-color: #fff;
-  padding: 16px 20px;
-  border-radius: 4px;
-  margin-bottom: 16px;
 }
 
 .table-area {
-  background-color: #fff;
-  padding: 16px 20px;
-  border-radius: 4px;
-}
-
-.pagination {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .color-dot {
@@ -543,5 +546,14 @@ onMounted(() => {
 
 .el-table__row {
   cursor: move;
+}
+
+.drag-handle {
+  cursor: move;
+  color: #909399;
+}
+
+.drag-handle:hover {
+  color: #409eff;
 }
 </style>
