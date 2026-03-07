@@ -30,4 +30,24 @@ public class BillImportRecordVO {
      * 进度百分比
      */
     private Integer progress;
+    
+    /**
+     * 唯一记录数
+     */
+    private Integer uniqueCount;
+    
+    /**
+     * 重复记录数
+     */
+    private Integer duplicateCount;
+    
+    /**
+     * 待转换记录数
+     */
+    private Integer pendingCount;
+    
+    /**
+     * 已转换记录数
+     */
+    private Integer convertedCount;
 }

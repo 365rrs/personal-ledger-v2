@@ -118,7 +118,33 @@ public class BillImportServiceImpl implements BillImportService {
 
         IPage<BillImportRecord> recordPage = importRecordMapper.selectPage(page, wrapper);
 
-        return recordPage.convert(this::convertToRecordVO);
+        // 转换为 VO
+        IPage<BillImportRecordVO> voPage = recordPage.convert(this::convertToRecordVO);
+
+        if (recordPage.getRecords().isEmpty()) {
+            return voPage;
+        }
+
+        // 批量获取统计信息
+        List<Long> recordIds = voPage.getRecords().stream()
+                .map(BillImportRecordVO::getId)
+                .collect(Collectors.toList());
+
+        // 批量查询每个导入记录的明细统计
+        Map<Long, BillImportStatisticsVO> statisticsMap = batchGetStatistics(recordIds);
+
+        // 填充统计信息到 VO
+        for (BillImportRecordVO vo : voPage.getRecords()) {
+            BillImportStatisticsVO stats = statisticsMap.get(vo.getId());
+            if (stats != null) {
+                vo.setUniqueCount(stats.getUniqueCount());
+                vo.setDuplicateCount(stats.getDuplicateCount());
+                vo.setPendingCount(stats.getPendingCount());
+                vo.setConvertedCount(stats.getConvertedCount());
+            }
+        }
+
+        return voPage;
     }
 
     @Override
@@ -196,12 +222,12 @@ public class BillImportServiceImpl implements BillImportService {
             if ("DUPLICATE".equals(detail.getConvertStatus())) {
                 continue;
             }
-            
+
             try {
                 log.info("开始转换明细ID: {}", detail.getId());
                 Bill bill = convertDetailToBill(detail);
                 log.info("转换后的账单: {}", bill);
-                
+
                 billMapper.insert(bill);
                 log.info("账单插入成功, ID: {}", bill.getId());
 
@@ -242,6 +268,46 @@ public class BillImportServiceImpl implements BillImportService {
 
         record.setDeleted("1");
         importRecordMapper.updateById(record);
+    }
+
+    /**
+     * 批量获取统计信息
+     */
+    private Map<Long, BillImportStatisticsVO> batchGetStatistics(List<Long> recordIds) {
+        if (recordIds == null || recordIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 批量查询所有明细
+        LambdaQueryWrapper<BillImportDetail> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(BillImportDetail::getImportRecordId, recordIds);
+        List<BillImportDetail> allDetails = importDetailMapper.selectList(wrapper);
+
+        // 按导入记录 ID 分组并计算统计
+        return allDetails.stream()
+                .collect(Collectors.groupingBy(
+                        BillImportDetail::getImportRecordId,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                details -> {
+                                    BillImportStatisticsVO stats = new BillImportStatisticsVO();
+                                    stats.setTotalCount(details.size());
+                                    stats.setSuccessCount((int) details.stream()
+                                            .filter(d -> "SUCCESS".equals(d.getImportStatus())).count());
+                                    stats.setFailCount((int) details.stream()
+                                            .filter(d -> "FAILED".equals(d.getImportStatus())).count());
+                                    stats.setUniqueCount((int) details.stream()
+                                            .filter(d -> "UNIQUE".equals(d.getDuplicateStatus())).count());
+                                    stats.setDuplicateCount((int) details.stream()
+                                            .filter(d -> "DUPLICATE".equals(d.getDuplicateStatus())).count());
+                                    stats.setPendingCount((int) details.stream()
+                                            .filter(d -> "PENDING".equals(d.getConvertStatus())).count());
+                                    stats.setConvertedCount((int) details.stream()
+                                            .filter(d -> "CONVERTED".equals(d.getConvertStatus())).count());
+                                    return stats;
+                                }
+                        )
+                ));
     }
 
     /**
@@ -307,9 +373,9 @@ public class BillImportServiceImpl implements BillImportService {
 
             BillImportData billImportData = new BillImportData();
 
-            // 读取前8行的导出信息
-            String[] headerLines = new String[8];
-            for (int i = 0; i < 8; i++) {
+            // 读取前6行的导出信息
+            String[] headerLines = new String[6];
+            for (int i = 0; i < 6; i++) {
                 headerLines[i] = reader.readLine();
             }
 
@@ -320,7 +386,7 @@ public class BillImportServiceImpl implements BillImportService {
             // 使用 EasyExcel 读取交易记录
             List<BillImportRecordData> importRecords = EasyExcel.read(file.getInputStream())
                     .head(BillImportRecordData.class)
-                    .headRowNumber(9)  // 跳过前8行，第9行作为表头
+                    .headRowNumber(8)  // 跳过前8行，第9行作为表头
                     .sheet()
                     .doReadSync();
 
@@ -580,7 +646,7 @@ public class BillImportServiceImpl implements BillImportService {
         // 应用数据清洗规则
         Map<String, String> billFields = new HashMap<>();
         billFields.put("transaction_type", bill.getAmountType());
-        
+
         // 清洗分类（必填）
         String category = billDataCleanService.cleanField("CATEGORY", billFields);
         if (category == null) {

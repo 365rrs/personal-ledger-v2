@@ -9,35 +9,63 @@
       </template>
 
       <!-- 统计信息 -->
-      <el-descriptions :column="4" border class="statistics">
-        <el-descriptions-item label="总数">{{ statistics.totalCount }}</el-descriptions-item>
-        <el-descriptions-item label="成功">{{ statistics.successCount }}</el-descriptions-item>
-        <el-descriptions-item label="失败">{{ statistics.failCount }}</el-descriptions-item>
-        <el-descriptions-item label="唯一">{{ statistics.uniqueCount }}</el-descriptions-item>
-        <el-descriptions-item label="重复">{{ statistics.duplicateCount }}</el-descriptions-item>
-        <el-descriptions-item label="待转换">{{ statistics.pendingCount }}</el-descriptions-item>
-        <el-descriptions-item label="已转换">{{ statistics.convertedCount }}</el-descriptions-item>
-      </el-descriptions>
+      <div class="statistics-container">
+        <!-- 第一行：导入总量 -->
+        <div class="stat-row">
+          <div class="stat-box total-box">
+            <div class="stat-label">总记录数</div>
+            <div class="stat-number total">{{ statistics.totalCount }}</div>
+          </div>
+          
+          <!-- 分隔线 -->
+          <div class="stat-divider"></div>
+          
+          <div class="stat-box success-box">
+            <div class="stat-label">✅ 新增</div>
+            <div class="stat-number success">{{ statistics.uniqueCount }}</div>
+          </div>
+          <div class="stat-box duplicate-box">
+            <div class="stat-label">🔁 重复</div>
+            <div class="stat-number duplicate">{{ statistics.duplicateCount }}</div>
+          </div>
+          <div class="stat-box fail-box">
+            <div class="stat-label">⚠️ 失败</div>
+            <div class="stat-number fail">{{ statistics.failCount }}</div>
+          </div>
+          
+          <!-- 分隔线 -->
+          <div class="stat-divider"></div>
+          
+          <div class="stat-box pending-box">
+            <div class="stat-label">⏳ 待转换</div>
+            <div class="stat-number pending">{{ statistics.pendingCount }}</div>
+          </div>
+          <div class="stat-box converted-box">
+            <div class="stat-label">✔️ 已转换</div>
+            <div class="stat-number converted">{{ statistics.convertedCount }}</div>
+          </div>
+        </div>
+      </div>
 
       <!-- 查询表单 -->
       <el-form :inline="true" :model="queryForm" class="query-form">
-        <el-form-item label="导入状态">
-          <el-select v-model="queryForm.importStatus" placeholder="全部" clearable>
-            <el-option label="成功" value="SUCCESS" />
-            <el-option label="失败" value="FAILED" />
+        <el-form-item label="转换状态">
+          <el-select v-model="queryForm.convertStatus" placeholder="请选择转换状态" clearable style="width: 140px">
+            <el-option label="待转换" value="PENDING" />
+            <el-option label="已转换" value="CONVERTED" />
+            <el-option label="已跳过" value="SKIPPED" />
           </el-select>
         </el-form-item>
         <el-form-item label="重复状态">
-          <el-select v-model="queryForm.duplicateStatus" placeholder="全部" clearable>
+          <el-select v-model="queryForm.duplicateStatus" placeholder="请选择重复状态" clearable style="width: 140px">
             <el-option label="唯一" value="UNIQUE" />
             <el-option label="重复" value="DUPLICATE" />
           </el-select>
         </el-form-item>
-        <el-form-item label="转换状态">
-          <el-select v-model="queryForm.convertStatus" placeholder="全部" clearable>
-            <el-option label="待转换" value="PENDING" />
-            <el-option label="已转换" value="CONVERTED" />
-            <el-option label="已跳过" value="SKIPPED" />
+        <el-form-item label="导入状态">
+          <el-select v-model="queryForm.importStatus" placeholder="请选择导入状态" clearable style="width: 140px">
+            <el-option label="成功" value="SUCCESS" />
+            <el-option label="失败" value="FAILED" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -271,8 +299,82 @@ onMounted(() => {
   align-items: center;
 }
 
-.statistics {
+.statistics-container {
   margin-bottom: 20px;
+}
+
+.stat-row {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 6px;
+  align-items: center;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #303133;
+  min-width: 100px;
+  padding-right: 20px;
+  border-right: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+}
+
+.stat-divider {
+  width: 2px;
+  height: 50px;
+  background: linear-gradient(to bottom, transparent, #bae6fd, transparent);
+  margin: 0 8px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: bold;
+  font-family: 'DIN Alternate', 'Arial', sans-serif;
+}
+
+/* 不同状态的颜色 */
+.stat-number.total {
+  color: #409eff;
+}
+
+.stat-number.success {
+  color: #67c23a;
+}
+
+.stat-number.duplicate {
+  color: #e6a23c;
+}
+
+.stat-number.fail {
+  color: #f56c6c;
+}
+
+.stat-number.pending {
+  color: #909399;
+}
+
+.stat-number.converted {
+  color: #67c23a;
 }
 
 .query-form {
