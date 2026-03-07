@@ -655,9 +655,13 @@ public class BillImportServiceImpl implements BillImportService {
         }
         bill.setCategory(category);
 
+        // 交易描述
         bill.setTransactionDesc(detail.getDescription());
+        // 数据指纹（用于重复检测）
         bill.setDataHash(detail.getDataHash());
+        // 是否手工记账：0-否，1-是
         bill.setManualEntry("0");
+        // 是否计入收支统计：0-不计入，1-计入
         bill.setIncludeInStatistics("1");
 
         return bill;
