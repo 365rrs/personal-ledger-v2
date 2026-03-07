@@ -24,6 +24,8 @@ public class BillQueryDTO {
     
     private String category;
     
+    private String subCategory;
+    
     private LocalDate startDate;
     
     private LocalDate endDate;
@@ -31,4 +33,16 @@ public class BillQueryDTO {
     private String paymentChannel;
     
     private String manualEntry;
+    
+    private String includeInStatistics;
+    
+    private String amountType;
+    
+    private String tags;
+    
+    private String keywords;
+    
+    private Double minAmount;
+    
+    private Double maxAmount;
 }
