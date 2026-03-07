@@ -124,7 +124,7 @@ public class BillServiceImpl implements BillService {
                 .ge(dto.getStartDate() != null, Bill::getTransactionDate, dto.getStartDate())
                 .le(dto.getEndDate() != null, Bill::getTransactionDate, dto.getEndDate())
                 .orderByDesc(Bill::getTransactionDate)
-                .orderByDesc(Bill::getCreateTime);
+                .orderByDesc(Bill::getTransactionTime);
         
         IPage<Bill> billPage = billMapper.selectPage(page, wrapper);
         return billPage.convert(converter::toVO);

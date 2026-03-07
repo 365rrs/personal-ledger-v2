@@ -47,32 +47,48 @@
       </el-descriptions>
 
       <!-- 数据表格 -->
-      <el-table :data="tableData" stripe>
-        <el-table-column prop="transactionDate" label="日期" width="120" />
-        <el-table-column prop="amountType" label="金额类型" width="100">
-          <template #default="{ row }">
-            <el-tag v-if="row.amountType === 'INCOME'" type="success">收入</el-tag>
-            <el-tag v-else type="warning">支出</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="金额" width="120">
+      <el-table :data="tableData" stripe style="width: 100%">
+        <el-table-column prop="transactionDate" label="交易日期" width="120" />
+        <el-table-column prop="transactionTime" label="交易时间" width="100" />
+        <el-table-column label="收入" width="80" align="right">
           <template #default="{ row }">
             <span v-if="row.amountType === 'INCOME'" style="color: #67c23a;">
-              +{{ row.incomeAmount }}
+              {{ row.incomeAmount }}
             </span>
-            <span v-else style="color: #f56c6c;">
-              -{{ row.expenseAmount }}
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="支出" width="80" align="right">
+          <template #default="{ row }">
+            <span v-if="row.amountType === 'EXPENSE'" style="color: #f56c6c;">
+              {{ row.expenseAmount }}
             </span>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column prop="transactionType" label="交易类型" width="120" show-overflow-tooltip />
-        <el-table-column prop="category" label="分类" width="120" />
-        <el-table-column prop="transactionDesc" label="描述" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="paymentChannel" label="支付渠道" width="120" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column prop="paymentChannel" label="支付渠道" width="120" show-overflow-tooltip />
+        <el-table-column prop="category" label="分类" width="120" show-overflow-tooltip />
+        <el-table-column prop="subCategory" label="二级分类" width="120" show-overflow-tooltip />
+        <el-table-column prop="transactionDesc" label="交易描述" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="manualRemark" label="用户备注" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="tags" label="标签" width="120" show-overflow-tooltip />
+        <el-table-column label="计入统计" width="90" align="center">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-tag v-if="row.includeInStatistics === '1'" type="success">是</el-tag>
+            <el-tag v-else type="info">否</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="手工记账" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.manualEntry === '1'" type="primary">是</el-tag>
+            <el-tag v-else type="info">否</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="150" fixed="right" align="center">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="handleView(row)">查看</el-button>
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -84,8 +100,8 @@
         :total="total"
         :page-sizes="[20, 50, 100]"
         layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleQuery"
-        @current-change="handleQuery"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
       />
     </el-card>
 
@@ -98,16 +114,16 @@
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="金额类型" prop="amountType">
-          <el-radio-group v-model="form.amountType">
+          <el-radio-group v-model="form.amountType" :disabled="isViewMode">
             <el-radio label="INCOME">收入</el-radio>
             <el-radio label="EXPENSE">支出</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="金额" prop="amount">
-          <el-input-number v-model="form.amount" :min="0.01" :precision="2" :step="1" />
+          <el-input-number v-model="form.amount" :min="0.01" :precision="2" :step="1" :disabled="isViewMode" />
         </el-form-item>
         <el-form-item label="分类" prop="category">
-          <el-input v-model="form.category" placeholder="请输入分类" />
+          <el-input v-model="form.category" placeholder="请输入分类" :disabled="isViewMode" />
         </el-form-item>
         <el-form-item label="交易日期" prop="transactionDate">
           <el-date-picker
@@ -115,6 +131,7 @@
             type="date"
             placeholder="选择日期"
             value-format="YYYY-MM-DD"
+            :disabled="isViewMode"
           />
         </el-form-item>
         <el-form-item label="交易时间">
@@ -122,24 +139,25 @@
             v-model="form.transactionTime"
             placeholder="选择时间"
             value-format="HH:mm:ss"
+            :disabled="isViewMode"
           />
         </el-form-item>
         <el-form-item label="支付渠道">
-          <el-input v-model="form.paymentChannel" placeholder="请输入支付渠道" />
+          <el-input v-model="form.paymentChannel" placeholder="请输入支付渠道" :disabled="isViewMode" />
         </el-form-item>
         <el-form-item label="交易描述">
-          <el-input v-model="form.transactionDesc" type="textarea" :rows="3" />
+          <el-input v-model="form.transactionDesc" type="textarea" :rows="3" :disabled="isViewMode" />
         </el-form-item>
         <el-form-item label="手工备注">
-          <el-input v-model="form.manualRemark" type="textarea" :rows="2" />
+          <el-input v-model="form.manualRemark" type="textarea" :rows="2" :disabled="isViewMode" />
         </el-form-item>
         <el-form-item label="计入统计">
-          <el-switch v-model="form.includeInStatistics" active-value="1" inactive-value="0" />
+          <el-switch v-model="form.includeInStatistics" active-value="1" inactive-value="0" :disabled="isViewMode" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button v-if="!isViewMode" type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -176,6 +194,7 @@ const statistics = ref({
 const dialogVisible = ref(false)
 const dialogTitle = ref('记一笔')
 const formRef = ref()
+const isViewMode = ref(false) // 是否为查看模式
 const form = reactive({
   id: null,
   amountType: 'EXPENSE',
@@ -229,6 +248,20 @@ const handleDateChange = (val) => {
   }
 }
 
+// 分页变化处理
+const handleSizeChange = (size) => {
+  queryForm.size = size
+  queryForm.current = 1
+  loadData()
+  loadStatistics()
+}
+
+const handleCurrentChange = (current) => {
+  queryForm.current = current
+  loadData()
+  loadStatistics()
+}
+
 // 查询
 const handleQuery = () => {
   queryForm.current = 1
@@ -280,6 +313,29 @@ const handleEdit = (row) => {
     transactionDesc: row.transactionDesc,
     manualRemark: row.manualRemark,
     includeInStatistics: row.includeInStatistics
+  })
+}
+
+// 查看
+const handleView = (row) => {
+  dialogTitle.value = '账单详情'
+  isViewMode.value = true // 设置为查看模式
+  dialogVisible.value = true
+  Object.assign(form, {
+    id: row.id,
+    amountType: row.amountType,
+    transactionType: row.transactionType,
+    amount: row.amountType === 'INCOME' ? row.incomeAmount : row.expenseAmount,
+    category: row.category,
+    subCategory: row.subCategory,
+    transactionDate: row.transactionDate,
+    transactionTime: row.transactionTime,
+    paymentChannel: row.paymentChannel,
+    transactionDesc: row.transactionDesc,
+    manualRemark: row.manualRemark,
+    tags: row.tags,
+    includeInStatistics: row.includeInStatistics,
+    manualEntry: row.manualEntry
   })
 }
 
@@ -343,6 +399,7 @@ const handleSubmit = async () => {
 // 关闭弹窗
 const handleDialogClose = () => {
   formRef.value?.resetFields()
+  isViewMode.value = false // 重置查看模式
 }
 
 onMounted(() => {

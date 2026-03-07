@@ -13,11 +13,6 @@ const routes = [
         component: () => import('../views/Dashboard.vue')
       },
       {
-        path: 'ledger',
-        name: 'Ledger',
-        component: () => import('../views/Ledger.vue')
-      },
-      {
         path: 'category',
         name: 'Category',
         component: () => import('../views/Category.vue')

@@ -13,10 +13,6 @@
           <el-icon><HomeFilled /></el-icon>
           <span>首页</span>
         </el-menu-item>
-        <el-menu-item index="/ledger">
-          <el-icon><Tickets /></el-icon>
-          <span>账单管理</span>
-        </el-menu-item>
         <el-menu-item index="/bill">
           <el-icon><Tickets /></el-icon>
           <span>账单列表</span>
@@ -59,7 +55,6 @@ const activeMenu = computed(() => route.path)
 const pageTitle = computed(() => {
   const titles = {
     '/dashboard': '首页',
-    '/ledger': '账单管理',
     '/bill': '账单列表',
     '/bill-import': '账单导入',
     '/category': '分类管理',
