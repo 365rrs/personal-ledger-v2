@@ -25,6 +25,10 @@
           <el-icon><Menu /></el-icon>
           <span>分类管理</span>
         </el-menu-item>
+        <el-menu-item index="/tag">
+          <el-icon><PriceTag /></el-icon>
+          <span>标签管理</span>
+        </el-menu-item>
         <el-menu-item index="/statistics">
           <el-icon><DataAnalysis /></el-icon>
           <span>统计分析</span>
@@ -46,7 +50,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Tickets, Menu, DataAnalysis, Upload } from '@element-plus/icons-vue'
+import { HomeFilled, Tickets, Menu, DataAnalysis, Upload, PriceTag } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -58,6 +62,7 @@ const pageTitle = computed(() => {
     '/bill': '账单列表',
     '/bill-import': '账单导入',
     '/category': '分类管理',
+    '/tag': '标签管理',
     '/statistics': '统计分析'
   }
   return titles[route.path] || '个人账本系统'

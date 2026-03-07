@@ -78,7 +78,24 @@
               <el-input v-model="queryForm.transactionType" placeholder="请输入交易类型" clearable style="width: 150px; margin-right: 12px;" />
               
               <span style="margin-right: 12px;">标签：</span>
-              <el-input v-model="queryForm.tags" placeholder="请输入标签" clearable style="width: 150px;" />
+              <el-select 
+                v-model="queryForm.tagIds" 
+                placeholder="请选择标签" 
+                multiple 
+                filterable
+                clearable
+                style="width: 300px;"
+              >
+                <el-option
+                  v-for="tag in tagList"
+                  :key="tag.id"
+                  :label="tag.tagName"
+                  :value="tag.id"
+                >
+                  <span>{{ tag.tagName }}</span>
+                  <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
+                </el-option>
+              </el-select>
             </div>
             
             <!-- 第五行：关键词搜索 + 金额范围 -->
@@ -238,9 +255,24 @@
           v-if="selectedColumns.includes('tags')"
           prop="tags" 
           label="标签" 
-          width="120" 
-          show-overflow-tooltip 
-        />
+          width="200" 
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">
+            <div v-if="row.tagIds && row.tagIds.length > 0" style="display: flex; flex-wrap: wrap; gap: 4px;">
+              <el-tag
+                v-for="tagId in row.tagIds"
+                :key="tagId"
+                size="small"
+                effect="plain"
+                :style="{ backgroundColor: getTagColor(tagId) + '20', borderColor: getTagColor(tagId), color: getTagColor(tagId) }"
+              >
+                {{ getTagName(tagId) }}
+              </el-tag>
+            </div>
+            <span v-else style="color: #999;">-</span>
+          </template>
+        </el-table-column>
         
         <!-- 是否计入收支 -->
         <el-table-column 
@@ -371,6 +403,26 @@
         <el-form-item label="是否计入收支">
           <el-switch v-model="form.includeInStatistics" active-value="1" inactive-value="0" :disabled="isViewMode" />
         </el-form-item>
+        <el-form-item label="标签">
+          <el-select 
+            v-model="form.tagIds" 
+            placeholder="请选择标签" 
+            multiple 
+            filterable
+            :disabled="isViewMode"
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="tag in tagList"
+              :key="tag.id"
+              :label="tag.tagName"
+              :value="tag.id"
+            >
+              <span>{{ tag.tagName }}</span>
+              <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
+            </el-option>
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -385,6 +437,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Setting } from '@element-plus/icons-vue'
 import { pageBills, getStatistics, createBill, updateBill, deleteBill } from '@/api/bill'
+import { getTagList } from '@/api/tag'
 
 // 列设置 - 所有可用列
 const allColumns = [
@@ -469,7 +522,7 @@ const queryForm = reactive({
   paymentChannel: '',
   amountType: '',
   includeInStatistics: '',
-  tags: '',
+  tagIds: [],  // 标签 ID 数组
   keywords: '',
   minAmount: null,
   maxAmount: null,
@@ -492,6 +545,31 @@ const statistics = ref({
   balance: 0
 })
 
+// 标签列表
+const tagList = ref([])
+
+// 加载标签列表
+const loadTagList = async () => {
+  try {
+    const res = await getTagList({ size: 100, tagStatus: 'enable' })
+    tagList.value = res.data.records || []
+  } catch (error) {
+    console.error('加载标签列表失败:', error)
+  }
+}
+
+// 根据标签 ID 获取标签名称
+const getTagName = (tagId) => {
+  const tag = tagList.value.find(t => t.id === tagId)
+  return tag ? tag.tagName : ''
+}
+
+// 根据标签 ID 获取标签颜色
+const getTagColor = (tagId) => {
+  const tag = tagList.value.find(t => t.id === tagId)
+  return tag && tag.tagColor ? tag.tagColor : '#409EFF' // 默认蓝色
+}
+
 // 弹窗
 const dialogVisible = ref(false)
 const dialogTitle = ref('记一笔')
@@ -509,7 +587,8 @@ const form = reactive({
   paymentChannel: '',
   transactionDesc: '',
   manualRemark: '',
-  includeInStatistics: '1'
+  includeInStatistics: '1',
+  tagIds: []  // 标签 ID 数组
 })
 
 const rules = {
@@ -663,7 +742,7 @@ const handleReset = () => {
   queryForm.paymentChannel = ''
   queryForm.amountType = ''
   queryForm.includeInStatistics = ''
-  queryForm.tags = ''
+  queryForm.tagIds = []  // 重置标签
   queryForm.keywords = ''
   queryForm.minAmount = null
   queryForm.maxAmount = null
@@ -698,7 +777,8 @@ const handleCreate = () => {
     paymentChannel: '',
     transactionDesc: '',
     manualRemark: '',
-    includeInStatistics: '1'
+    includeInStatistics: '1',
+    tagIds: []  // 清空标签
   })
 }
 
@@ -718,7 +798,8 @@ const handleEdit = (row) => {
     paymentChannel: row.paymentChannel,
     transactionDesc: row.transactionDesc,
     manualRemark: row.manualRemark,
-    includeInStatistics: row.includeInStatistics
+    includeInStatistics: row.includeInStatistics,
+    tagIds: row.tagIds || []  // 加载标签
   })
 }
 
@@ -726,6 +807,7 @@ const handleEdit = (row) => {
 const handleView = (row) => {
   dialogTitle.value = '账单详情'
   isViewMode.value = true // 设置为查看模式
+  isEditMode.value = false // 确保编辑模式为 false
   dialogVisible.value = true
   Object.assign(form, {
     id: row.id,
@@ -739,9 +821,9 @@ const handleView = (row) => {
     paymentChannel: row.paymentChannel,
     transactionDesc: row.transactionDesc,
     manualRemark: row.manualRemark,
-    tags: row.tags,
     includeInStatistics: row.includeInStatistics,
-    manualEntry: row.manualEntry
+    manualEntry: row.manualEntry,
+    tagIds: row.tagIds || []  // 加载标签 ID
   })
 }
 
@@ -775,7 +857,8 @@ const handleSubmit = async () => {
       paymentChannel: form.paymentChannel,
       transactionDesc: form.transactionDesc,
       manualRemark: form.manualRemark,
-      includeInStatistics: form.includeInStatistics
+      includeInStatistics: form.includeInStatistics,
+      tagIds: form.tagIds  // 标签 ID 数组
     }
     
     if (form.amountType === 'INCOME') {
@@ -816,6 +899,8 @@ onMounted(() => {
   }
   // 加载保存的列配置
   loadColumnSettings()
+  // 加载标签列表
+  loadTagList()
   loadData()
   loadStatistics()
 })

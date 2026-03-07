@@ -18,6 +18,11 @@ const routes = [
         component: () => import('../views/Category.vue')
       },
       {
+        path: 'tag',
+        name: 'TagManagement',
+        component: () => import('../views/TagManagement.vue')
+      },
+      {
         path: 'statistics',
         name: 'Statistics',
         component: () => import('../views/Statistics.vue')

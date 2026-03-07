@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.entity.Bill;
 import com.ledger.vo.BillStatisticsVO;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 /**
@@ -14,6 +15,7 @@ import org.apache.ibatis.annotations.Param;
  * @author personal-ledger
  * @date 2025-01-13
  */
+@Mapper
 public interface BillMapper extends BaseMapper<Bill> {
     /**
      * 分页查询账单列表
@@ -31,4 +33,12 @@ public interface BillMapper extends BaseMapper<Bill> {
      * @return 统计数据
      */
     BillStatisticsVO getStatistics(@Param("dto") BillQueryDTO dto);
+
+    /**
+     * 更新账单（动态更新非空字段）
+     *
+     * @param bill 账单实体
+     * @return 影响行数
+     */
+    int updateBill(Bill bill);
 }

@@ -8,9 +8,10 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 /**
- * 账单DTO
+ * 账单 DTO
  *
  * @author personal-ledger
  * @date 2025-01-13
@@ -45,4 +46,6 @@ public class BillDTO {
     private String manualRemark;
     
     private String includeInStatistics;
+    
+    private List<Long> tagIds;
 }

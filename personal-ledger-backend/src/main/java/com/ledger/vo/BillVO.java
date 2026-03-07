@@ -30,6 +30,7 @@ public class BillVO {
     private String manualRemark;
     private String includeInStatistics;
     private String manualEntry;
+    private java.util.List<Long> tagIds;  // 标签 ID 列表
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

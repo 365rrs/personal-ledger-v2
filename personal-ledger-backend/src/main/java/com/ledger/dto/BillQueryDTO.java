@@ -40,6 +40,8 @@ public class BillQueryDTO {
     
     private String tags;
     
+    private java.util.List<Long> tagIds;  // 标签 ID 列表
+    
     private String keywords;
     
     private Double minAmount;
