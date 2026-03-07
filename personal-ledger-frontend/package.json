@@ -8,10 +8,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.3.4",
-    "vue-router": "^4.2.4",
+    "axios": "^1.5.0",
     "element-plus": "^2.3.14",
-    "axios": "^1.5.0"
+    "sortablejs": "^1.15.7",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.3.4",

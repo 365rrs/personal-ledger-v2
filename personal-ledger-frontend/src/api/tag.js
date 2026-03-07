@@ -64,3 +64,14 @@ export function updateTagStatus(id, status) {
     params: { id, status }
   })
 }
+
+/**
+ * 更新标签排序序号
+ */
+export function updateTagSortOrder(id, sortOrder) {
+  return request({
+    url: '/tag/sort/update',
+    method: 'post',
+    params: { id, sortOrder }
+  })
+}

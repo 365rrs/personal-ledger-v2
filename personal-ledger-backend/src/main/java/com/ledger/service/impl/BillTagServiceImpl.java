@@ -127,4 +127,15 @@ public class BillTagServiceImpl implements BillTagService {
         tag.setTagStatus(status);
         billTagMapper.updateById(tag);
     }
+
+    @Override
+    public void updateSortOrder(Long id, Integer newSortOrder) {
+        BillTag tag = billTagMapper.selectById(id);
+        if (tag == null) {
+            throw new BusinessException("标签不存在");
+        }
+        
+        tag.setSortOrder(newSortOrder);
+        billTagMapper.updateById(tag);
+    }
 }

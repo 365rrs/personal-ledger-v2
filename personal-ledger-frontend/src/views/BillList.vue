@@ -92,8 +92,15 @@
                   :label="tag.tagName"
                   :value="tag.id"
                 >
-                  <span>{{ tag.tagName }}</span>
-                  <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span 
+                      class="color-dot" 
+                      :style="{ backgroundColor: tag.tagColor }"
+                      style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
+                    ></span>
+                    <span>{{ tag.tagName }}</span>
+                    <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
+                  </div>
                 </el-option>
               </el-select>
             </div>
@@ -412,15 +419,44 @@
             :disabled="isViewMode"
             style="width: 100%;"
           >
-            <el-option
-              v-for="tag in tagList"
-              :key="tag.id"
-              :label="tag.tagName"
-              :value="tag.id"
-            >
-              <span>{{ tag.tagName }}</span>
-              <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
-            </el-option>
+            <!-- 编辑时只显示启用的标签 -->
+            <template v-if="isEditMode">
+              <el-option
+                v-for="tag in getEnabledTagList"
+                :key="tag.id"
+                :label="tag.tagName"
+                :value="tag.id"
+              >
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span 
+                    class="color-dot" 
+                    :style="{ backgroundColor: tag.tagColor }"
+                    style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
+                  ></span>
+                  <span>{{ tag.tagName }}</span>
+                  <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
+                </div>
+              </el-option>
+            </template>
+            <!-- 查看时显示所有标签（包括停用的） -->
+            <template v-else>
+              <el-option
+                v-for="tag in tagList"
+                :key="tag.id"
+                :label="tag.tagName"
+                :value="tag.id"
+              >
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span 
+                    class="color-dot" 
+                    :style="{ backgroundColor: tag.tagColor }"
+                    style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
+                  ></span>
+                  <span>{{ tag.tagName }}</span>
+                  <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
+                </div>
+              </el-option>
+            </template>
           </el-select>
         </el-form-item>
       </el-form>
@@ -433,7 +469,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Setting } from '@element-plus/icons-vue'
 import { pageBills, getStatistics, createBill, updateBill, deleteBill } from '@/api/bill'
@@ -548,15 +584,20 @@ const statistics = ref({
 // 标签列表
 const tagList = ref([])
 
-// 加载标签列表
+// 加载标签列表（包含停用和启用的）
 const loadTagList = async () => {
   try {
-    const res = await getTagList({ size: 100, tagStatus: 'enable' })
+    const res = await getTagList({ size: 100 })  // 不传 tagStatus，获取所有标签
     tagList.value = res.data.records || []
   } catch (error) {
     console.error('加载标签列表失败:', error)
   }
 }
+
+// 获取启用的标签列表（用于编辑时选择）
+const getEnabledTagList = computed(() => {
+  return tagList.value.filter(tag => tag.tagStatus === 'enable')
+})
 
 // 根据标签 ID 获取标签名称
 const getTagName = (tagId) => {

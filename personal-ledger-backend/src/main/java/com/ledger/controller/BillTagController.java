@@ -61,4 +61,10 @@ public class BillTagController {
         billTagService.updateStatus(id, status);
         return Response.success();
     }
+
+    @PostMapping("/sort/update")
+    public Response<Void> updateSortOrder(@RequestParam Long id, @RequestParam Integer sortOrder) {
+        billTagService.updateSortOrder(id, sortOrder);
+        return Response.success();
+    }
 }

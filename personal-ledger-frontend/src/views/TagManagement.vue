@@ -48,10 +48,12 @@
     <!-- 表格区域 -->
     <div class="table-area">
       <el-table 
+        ref="tableRef"
         :data="tableData" 
         stripe 
         style="width: 100%"
         v-loading="loading"
+        row-key="id"
       >
         <el-table-column prop="tagName" label="标签名称" width="150" />
         <el-table-column prop="tagCategory" label="分类" width="120" />
@@ -82,7 +84,7 @@
               {{ row.tagStatus === 'enable' ? '停用' : '启用' }}
             </el-button>
             <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-            <el-button link type="primary" @click="handleSortUp(row)" :disabled="row.sortOrder === 1">↑</el-button>
+            <el-button link type="primary" @click="handleSortUp(row)" :disabled="row.sortOrder === 0">↑</el-button>
             <el-button link type="primary" @click="handleSortDown(row)">↓</el-button>
           </template>
         </el-table-column>
@@ -133,7 +135,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="标签颜色" prop="tagColor">
-          <el-color-picker v-model="formData.tagColor" />
+          <el-color-picker v-model="formData.tagColor" :predefine="colorPresets" />
         </el-form-item>
         <el-form-item label="排序序号" prop="sortOrder">
           <el-input-number v-model="formData.sortOrder" :min="0" :max="9999" />
@@ -148,9 +150,30 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getTagList, getTagDetail, createTag, updateTag, deleteTag, updateTagStatus } from '@/api/tag'
+import { getTagList, getTagDetail, createTag, updateTag, deleteTag, updateTagStatus, updateTagSortOrder } from '@/api/tag'
+import Sortable from 'sortablejs'
+
+// 16 种预设颜色
+const colorPresets = [
+  '#ff6b6b', // 红色
+  '#ee5a6f', // 粉红
+  '#f06595', // 玫红
+  '#cc5de8', // 紫色
+  '#845ef7', // 深紫
+  '#5c7cfa', // 蓝色
+  '#339af0', // 天蓝
+  '#22b8cf', // 青色
+  '#20c997', // 青绿
+  '#51cf66', // 绿色
+  '#94d82d', // 黄绿
+  '#fcc419', // 黄色
+  '#ff922b', // 橙色
+  '#fd7e14', // 深橙
+  '#e8590c', // 棕橙
+  '#a61e4d'  // 暗红
+]
 
 // 查询表单
 const queryForm = reactive({
@@ -189,6 +212,10 @@ const formRules = {
 }
 
 const formRef = ref(null)
+const tableRef = ref(null)
+
+// 拖拽排序实例
+let sortableInstance = null
 
 // 获取数据
 const fetchData = async () => {
@@ -197,11 +224,77 @@ const fetchData = async () => {
     const res = await getTagList(queryForm)
     tableData.value = res.data.records
     total.value = res.data.total
+    
+    // 数据加载完成后初始化拖拽排序
+    await nextTick()
+    initSortable()
   } catch (error) {
     console.error('获取标签列表失败:', error)
     ElMessage.error('获取标签列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 初始化拖拽排序
+const initSortable = () => {
+  if (!tableRef.value) return
+  
+  // 获取表格的 tbody 元素
+  const tbody = tableRef.value.$el.querySelector('.el-table__body-wrapper tbody')
+  if (!tbody) return
+  
+  // 如果已经初始化过，先销毁
+  if (sortableInstance) {
+    sortableInstance.destroy()
+  }
+  
+  // 创建 Sortable 实例
+  sortableInstance = new Sortable(tbody, {
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    dragClass: 'sortable-drag',
+    onEnd: async (evt) => {
+      await handleDragEnd(evt)
+    }
+  })
+}
+
+// 拖拽结束处理
+const handleDragEnd = async (evt) => {
+  const { oldIndex, newIndex } = evt
+  
+  if (oldIndex === newIndex) return
+  
+  try {
+    // 创建新数组并重新排列
+    const newArray = [...tableData.value]
+    const [removed] = newArray.splice(oldIndex, 1)
+    newArray.splice(newIndex, 0, removed)
+    
+    // 收集需要更新的标签（不直接修改原数组）
+    const updates = []
+    newArray.forEach((tag, index) => {
+      if (tag.sortOrder !== index) {
+        updates.push({ id: tag.id, sortOrder: index })
+      }
+    })
+    
+    // 批量更新数据库
+    if (updates.length > 0) {
+      const updatePromises = updates.map(item => updateTagSortOrder(item.id, item.sortOrder))
+      await Promise.all(updatePromises)
+    }
+    
+    ElMessage.success('排序已更新')
+    
+    // 重新加载数据以刷新排序显示
+    await fetchData()
+  } catch (error) {
+    console.error('拖拽排序失败:', error)
+    ElMessage.error(error.message || '排序失败')
+    // 失败时重新加载数据恢复原状
+    await fetchData()
   }
 }
 
@@ -317,14 +410,55 @@ const handleDelete = async (row) => {
 
 // 上移排序
 const handleSortUp = async (row) => {
-  // TODO: 实现排序逻辑
-  ElMessage.info('排序功能待实现')
+  if (row.sortOrder <= 0) {
+    ElMessage.info('已经是最靠前位置')
+    return
+  }
+  
+  try {
+    // 查询上一个排序位置的标签
+    const prevSortOrder = row.sortOrder - 1
+    
+    // 更新当前标签的排序序号
+    await updateTagSortOrder(row.id, prevSortOrder)
+    
+    // 找到原来排在前面的标签，将它的排序序号 +1
+    const currentTagIndex = tableData.value.findIndex(item => item.id === row.id)
+    if (currentTagIndex > 0) {
+      const prevTag = tableData.value[currentTagIndex - 1]
+      await updateTagSortOrder(prevTag.id, row.sortOrder)
+    }
+    
+    ElMessage.success('上移成功')
+    fetchData()
+  } catch (error) {
+    console.error('上移排序失败:', error)
+    ElMessage.error(error.message || '上移失败')
+  }
 }
 
 // 下移排序
 const handleSortDown = async (row) => {
-  // TODO: 实现排序逻辑
-  ElMessage.info('排序功能待实现')
+  try {
+    // 查询下一个排序位置的标签
+    const nextSortOrder = row.sortOrder + 1
+    
+    // 更新当前标签的排序序号
+    await updateTagSortOrder(row.id, nextSortOrder)
+    
+    // 找到原来排在后面的标签，将它的排序序号 -1
+    const currentTagIndex = tableData.value.findIndex(item => item.id === row.id)
+    if (currentTagIndex < tableData.value.length - 1) {
+      const nextTag = tableData.value[currentTagIndex + 1]
+      await updateTagSortOrder(nextTag.id, row.sortOrder)
+    }
+    
+    ElMessage.success('下移成功')
+    fetchData()
+  } catch (error) {
+    console.error('下移排序失败:', error)
+    ElMessage.error(error.message || '下移失败')
+  }
 }
 
 // 关闭弹窗
@@ -395,5 +529,19 @@ onMounted(() => {
   height: 16px;
   border-radius: 50%;
   border: 1px solid #ddd;
+}
+
+/* 拖拽排序样式 */
+.sortable-ghost {
+  opacity: 0.4;
+  background-color: #f5f7fa;
+}
+
+.sortable-drag {
+  opacity: 0.8;
+}
+
+.el-table__row {
+  cursor: move;
 }
 </style>

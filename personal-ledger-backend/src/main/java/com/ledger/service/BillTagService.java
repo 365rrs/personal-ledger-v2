@@ -42,4 +42,9 @@ public interface BillTagService {
      * 启用/停用标签
      */
     void updateStatus(Long id, String status);
+    
+    /**
+     * 更新标签排序序号
+     */
+    void updateSortOrder(Long id, Integer newSortOrder);
 }
