@@ -7,7 +7,7 @@
           <el-button type="primary">新增账单</el-button>
         </div>
       </template>
-      <el-table :data="[]" border>
+      <el-table :data="[]" stripe>
         <el-table-column prop="type" label="类型" width="100" />
         <el-table-column prop="amount" label="金额" width="120" />
         <el-table-column prop="category" label="分类" width="120" />

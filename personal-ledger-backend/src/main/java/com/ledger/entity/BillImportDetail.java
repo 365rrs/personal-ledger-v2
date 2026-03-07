@@ -30,14 +30,19 @@ public class BillImportDetail extends BaseEntity {
     private String originalData;
     
     /**
-     * 类型
+     * 金额类型（INCOME/EXPENSE）
      */
-    private String type;
+    private String amountType;
     
     /**
      * 金额
      */
     private BigDecimal amount;
+    
+    /**
+     * 交易类型（原始值）
+     */
+    private String transactionType;
     
     /**
      * 描述

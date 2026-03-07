@@ -11,27 +11,8 @@
         </div>
       </template>
 
-      <!-- 查询表单 -->
-      <el-form :inline="true" :model="queryForm" class="query-form">
-        <el-form-item label="状态">
-          <el-select v-model="queryForm.status" placeholder="全部状态" clearable>
-            <el-option label="处理中" value="PROCESSING" />
-            <el-option label="成功" value="SUCCESS" />
-            <el-option label="失败" value="FAILED" />
-            <el-option label="部分成功" value="PARTIAL" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="文件名">
-          <el-input v-model="queryForm.fileName" placeholder="请输入文件名" clearable />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleQuery">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-
       <!-- 数据表格 -->
-      <el-table :data="tableData" border stripe>
+      <el-table :data="tableData" stripe>
         <el-table-column prop="fileName" label="文件名" min-width="200" />
         <el-table-column prop="createTime" label="导入时间" width="180" />
         <el-table-column prop="status" label="状态" width="100">
@@ -60,8 +41,8 @@
         :total="total"
         :page-sizes="[10, 20, 50, 100]"
         layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleQuery"
-        @current-change="handleQuery"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
       />
     </el-card>
 
@@ -108,9 +89,7 @@ const router = useRouter()
 // 查询表单
 const queryForm = reactive({
   current: 1,
-  size: 10,
-  status: '',
-  fileName: ''
+  size: 10
 })
 
 // 表格数据
@@ -123,7 +102,7 @@ const uploadRef = ref()
 const uploading = ref(false)
 const currentFile = ref(null)
 
-// 查询数据
+// 加载数据
 const loadData = async () => {
   try {
     const res = await pageRecords(queryForm)
@@ -134,17 +113,16 @@ const loadData = async () => {
   }
 }
 
-// 查询
-const handleQuery = () => {
+// 分页变化处理
+const handleSizeChange = (size) => {
+  queryForm.size = size
   queryForm.current = 1
   loadData()
 }
 
-// 重置
-const handleReset = () => {
-  queryForm.status = ''
-  queryForm.fileName = ''
-  handleQuery()
+const handleCurrentChange = (current) => {
+  queryForm.current = current
+  loadData()
 }
 
 // 显示上传对话框
@@ -223,10 +201,6 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.query-form {
-  margin-bottom: 20px;
 }
 
 .el-pagination {

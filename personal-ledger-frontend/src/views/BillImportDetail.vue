@@ -59,19 +59,19 @@
       <!-- 数据表格 -->
       <el-table
         :data="tableData"
-        border
         stripe
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="type" label="类型" width="100">
+        <el-table-column prop="amountType" label="金额类型" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.type === 'INCOME'" type="success">收入</el-tag>
-            <el-tag v-else-if="row.type === 'EXPENSE'" type="warning">支出</el-tag>
+            <el-tag v-if="row.amountType === 'INCOME'" type="success">收入</el-tag>
+            <el-tag v-else-if="row.amountType === 'EXPENSE'" type="warning">支出</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="amount" label="金额" width="120" />
+        <el-table-column prop="transactionType" label="交易类型" width="120" show-overflow-tooltip />
         <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip />
         <el-table-column prop="transactionTime" label="交易时间" width="180" />
         <el-table-column prop="importStatus" label="导入状态" width="100">
@@ -87,12 +87,14 @@
             <el-tag v-else type="info">未检查</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="convertStatus" label="转换状态" width="100">
+        <el-table-column prop="convertStatus" label="转换状态" width="120">
           <template #default="{ row }">
             <el-tag v-if="row.convertStatus === 'PENDING'" type="info">待转换</el-tag>
             <el-tag v-else-if="row.convertStatus === 'CONVERTED'" type="success">已转换</el-tag>
             <el-tag v-else-if="row.convertStatus === 'SKIPPED'" type="warning">已跳过</el-tag>
-            <el-tag v-else type="danger">{{ row.convertStatus }}</el-tag>
+            <el-tag v-else-if="row.convertStatus === 'DUPLICATE'" type="warning">重复跳过</el-tag>
+            <el-tag v-else-if="row.convertStatus === 'CONVERT_FAILED'" type="danger">转换失败</el-tag>
+            <el-tag v-else type="info">{{ row.convertStatus }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="errorMessage" label="错误信息" min-width="150" show-overflow-tooltip />

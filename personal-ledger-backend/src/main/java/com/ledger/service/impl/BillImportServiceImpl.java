@@ -20,6 +20,7 @@ import com.ledger.exception.BusinessException;
 import com.ledger.mapper.BillImportDetailMapper;
 import com.ledger.mapper.BillImportRecordMapper;
 import com.ledger.mapper.BillMapper;
+import com.ledger.service.BillDataCleanService;
 import com.ledger.service.BillImportService;
 import com.ledger.util.DataHashUtil;
 import com.ledger.util.FileParseUtil;
@@ -65,6 +66,9 @@ public class BillImportServiceImpl implements BillImportService {
 
     @Resource
     private BillImportConverter converter;
+
+    @Resource
+    private BillDataCleanService billDataCleanService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -183,19 +187,32 @@ public class BillImportServiceImpl implements BillImportService {
             }
         }
 
-        // 3. 批量创建账单
+        // 3. 转换前再次检查重复（防止导入后有新账单创建）
+        detectDuplicatesBeforeConvert(details);
+
+        // 4. 批量创建账单
         for (BillImportDetail detail : details) {
+            // 跳过重复记录
+            if ("DUPLICATE".equals(detail.getConvertStatus())) {
+                continue;
+            }
+            
             try {
+                log.info("开始转换明细ID: {}", detail.getId());
                 Bill bill = convertDetailToBill(detail);
+                log.info("转换后的账单: {}", bill);
+                
                 billMapper.insert(bill);
+                log.info("账单插入成功, ID: {}", bill.getId());
 
                 // 更新明细状态
                 detail.setConvertStatus("CONVERTED");
                 detail.setLedgerId(bill.getId());
                 importDetailMapper.updateById(detail);
+                log.info("明细状态更新成功");
 
             } catch (Exception e) {
-                log.error("转换账单失败", e);
+                log.error("转换账单失败, 明细ID: {}", detail.getId(), e);
                 detail.setConvertStatus("CONVERT_FAILED");
                 detail.setConvertErrorMessage(e.getMessage());
                 importDetailMapper.updateById(detail);
@@ -407,8 +424,9 @@ public class BillImportServiceImpl implements BillImportService {
 
                 LocalDateTime transactionDateTime = LocalDateTime.of(transactionDate, transactionTime);
 
-                detail.setType(type);
+                detail.setAmountType(type);
                 detail.setAmount(amount);
+                detail.setTransactionType(record.getTransactionType()); // 保存原始交易类型
                 detail.setDescription(description);
                 detail.setTransactionTime(transactionDateTime);
 
@@ -429,6 +447,43 @@ public class BillImportServiceImpl implements BillImportService {
         }
 
         return details;
+    }
+
+    /**
+     * 转换前重复检测（防止导入后有新账单创建）
+     */
+    private void detectDuplicatesBeforeConvert(List<BillImportDetail> details) {
+        // 提取所有数据指纹
+        List<String> dataHashes = details.stream()
+                .map(BillImportDetail::getDataHash)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (dataHashes.isEmpty()) {
+            return;
+        }
+
+        // 批量查询已存在的账单
+        LambdaQueryWrapper<Bill> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Bill::getDataHash, dataHashes)
+                .eq(Bill::getDeleted, "0");
+        List<Bill> existingBills = billMapper.selectList(wrapper);
+
+        // 构建数据指纹到账单ID的映射
+        Map<String, Long> hashToBillId = existingBills.stream()
+                .collect(Collectors.toMap(Bill::getDataHash, Bill::getId, (a, b) -> a));
+
+        // 更新明细的重复状态
+        for (BillImportDetail detail : details) {
+            Long duplicateBillId = hashToBillId.get(detail.getDataHash());
+            if (duplicateBillId != null) {
+                log.warn("明细ID: {} 在转换前检测到重复，重复账单ID: {}", detail.getId(), duplicateBillId);
+                detail.setDuplicateStatus("DUPLICATE");
+                detail.setDuplicateLedgerId(duplicateBillId);
+                detail.setConvertStatus("DUPLICATE");
+                importDetailMapper.updateById(detail);
+            }
+        }
     }
 
     /**
@@ -508,18 +563,31 @@ public class BillImportServiceImpl implements BillImportService {
         bill.setTransactionDate(detail.getTransactionTime().toLocalDate());
         bill.setTransactionTime(detail.getTransactionTime().toLocalTime());
 
-        // 设置金额
-        if ("INCOME".equals(detail.getType())) {
+        // 设置金额和类型
+        if ("INCOME".equals(detail.getAmountType())) {
             bill.setIncomeAmount(detail.getAmount());
-            bill.setExpenseAmount(BigDecimal.ZERO);
-            bill.setTransactionType("INCOME");
-        } else if ("EXPENSE".equals(detail.getType())) {
-            bill.setIncomeAmount(BigDecimal.ZERO);
+            bill.setAmountType("INCOME");
+        } else if ("EXPENSE".equals(detail.getAmountType())) {
             bill.setExpenseAmount(detail.getAmount());
-            bill.setTransactionType("EXPENSE");
+            bill.setAmountType("EXPENSE");
         } else {
-            throw new BusinessException("交易类型错误: " + detail.getType());
+            throw new BusinessException("交易类型错误: " + detail.getAmountType());
         }
+
+        // 设置原始交易类型
+        bill.setTransactionType(detail.getTransactionType());
+
+        // 应用数据清洗规则
+        Map<String, String> billFields = new HashMap<>();
+        billFields.put("transaction_type", bill.getAmountType());
+        
+        // 清洗分类（必填）
+        String category = billDataCleanService.cleanField("CATEGORY", billFields);
+        if (category == null) {
+            // 如果没有匹配到规则，使用默认分类
+            category = "INCOME".equals(bill.getAmountType()) ? "其他收入" : "其他支出";
+        }
+        bill.setCategory(category);
 
         bill.setTransactionDesc(detail.getDescription());
         bill.setDataHash(detail.getDataHash());

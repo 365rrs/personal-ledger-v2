@@ -7,7 +7,7 @@
           <el-button type="primary">新增分类</el-button>
         </div>
       </template>
-      <el-table :data="[]" border>
+      <el-table :data="[]" stripe>
         <el-table-column prop="name" label="分类名称" />
         <el-table-column prop="type" label="类型" width="120" />
         <el-table-column label="操作" width="150" fixed="right">

@@ -16,8 +16,9 @@ public class BillImportDetailVO {
     
     private Long id;
     private Long importRecordId;
-    private String type;
+    private String amountType;
     private BigDecimal amount;
+    private String transactionType;
     private String description;
     private LocalDateTime transactionTime;
     private String importStatus;

@@ -41,7 +41,12 @@ public class Bill extends BaseEntity {
     private BigDecimal expenseAmount;
     
     /**
-     * 交易类型：INCOME-收入，EXPENSE-支出
+     * 金额类型：INCOME-收入，EXPENSE-支出
+     */
+    private String amountType;
+    
+    /**
+     * 交易类型（原始值）
      */
     private String transactionType;
     

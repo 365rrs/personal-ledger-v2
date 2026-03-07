@@ -36,6 +36,11 @@ const routes = [
         path: 'bill-import/detail/:id',
         name: 'BillImportDetail',
         component: () => import('../views/BillImportDetail.vue')
+      },
+      {
+        path: 'bill',
+        name: 'BillList',
+        component: () => import('../views/BillList.vue')
       }
     ]
   }

@@ -1,0 +1,41 @@
+/**
+ * 全局表格样式
+ * 统一项目中的所有表格样式：只显示每行底部的分隔线
+ */
+
+/* Element Plus 表格全局样式覆盖 */
+.el-table {
+  /* 移除表格整体边框 */
+  border: none !important;
+}
+
+/* 移除表格内部包装器的伪元素边框 */
+.el-table__inner-wrapper::before {
+  display: none !important;
+}
+
+/* 表头单元格 - 只保留底边框 */
+.el-table__header th.el-table__cell {
+  border-right: none !important;
+  border-left: none !important;
+  border-top: none !important;
+  border-bottom: 1px solid #dcdfe6 !important;
+}
+
+/* 数据行单元格 - 只保留底边框 */
+.el-table__body td.el-table__cell {
+  border-right: none !important;
+  border-left: none !important;
+  border-top: none !important;
+  border-bottom: 1px solid #dcdfe6 !important;
+}
+
+/* 确保最后一行也有底边框 */
+.el-table__body tr:last-child td.el-table__cell {
+  border-bottom: 1px solid #dcdfe6 !important;
+}
+
+/* 空表格时的样式 */
+.el-table__empty-block {
+  border-bottom: 1px solid #dcdfe6 !important;
+}
