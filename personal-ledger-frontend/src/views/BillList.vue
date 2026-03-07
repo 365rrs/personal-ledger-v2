@@ -4,7 +4,13 @@
       <template #header>
         <div class="card-header">
           <span>账单列表</span>
-          <el-button type="primary" @click="handleCreate">+ 记一笔</el-button>
+          <div>
+            <el-button link type="primary" @click="showColumnSettings = true">
+              <el-icon><Setting /></el-icon>
+              列设置
+            </el-button>
+            <el-button type="primary" @click="handleCreate">+ 记一笔</el-button>
+          </div>
         </div>
       </template>
 
@@ -39,7 +45,7 @@
           />
         </div>
         
-        <!-- 第三行：收支类型 + 是否计入统计 + 分类 + 二级分类 -->
+        <!-- 第三行：收支类型 + 是否计入收支 + 分类 + 二级分类 -->
         <div style="margin-bottom: 12px;">
           <span style="margin-right: 12px;">收支类型：</span>
           <el-select v-model="queryForm.amountType" placeholder="全部" clearable style="width: 120px; margin-right: 12px;">
@@ -47,7 +53,7 @@
             <el-option label="支出" value="EXPENSE" />
           </el-select>
           
-          <span style="margin-right: 12px;">是否计入统计：</span>
+          <span style="margin-right: 12px;">是否计入收支：</span>
           <el-select v-model="queryForm.includeInStatistics" placeholder="全部" clearable style="width: 100px; margin-right: 12px;">
             <el-option label="是" value="1" />
             <el-option label="否" value="0" />
@@ -127,9 +133,29 @@
 
       <!-- 数据表格 -->
       <el-table :data="tableData" stripe style="width: 100%">
-        <el-table-column prop="transactionDate" label="交易日期" width="120" />
-        <el-table-column prop="transactionTime" label="交易时间" width="100" />
-        <el-table-column label="收入" width="80" align="right">
+        <!-- 交易日期 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('transactionDate')"
+          prop="transactionDate" 
+          label="交易日期" 
+          width="120" 
+        />
+        
+        <!-- 交易时间 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('transactionTime')"
+          prop="transactionTime" 
+          label="交易时间" 
+          width="100" 
+        />
+        
+        <!-- 收入 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('incomeAmount')"
+          label="收入" 
+          width="80" 
+          align="right"
+        >
           <template #default="{ row }">
             <span v-if="row.amountType === 'INCOME'" style="color: #67c23a;">
               {{ row.incomeAmount }}
@@ -137,7 +163,14 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="支出" width="80" align="right">
+        
+        <!-- 支出 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('expenseAmount')"
+          label="支出" 
+          width="80" 
+          align="right"
+        >
           <template #default="{ row }">
             <span v-if="row.amountType === 'EXPENSE'" style="color: #f56c6c;">
               {{ row.expenseAmount }}
@@ -145,26 +178,104 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="transactionType" label="交易类型" width="120" show-overflow-tooltip />
-        <el-table-column prop="paymentChannel" label="支付渠道" width="120" show-overflow-tooltip />
-        <el-table-column prop="category" label="分类" width="120" show-overflow-tooltip />
-        <el-table-column prop="subCategory" label="二级分类" width="120" show-overflow-tooltip />
-        <el-table-column prop="transactionDesc" label="交易描述" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="manualRemark" label="用户备注" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="tags" label="标签" width="120" show-overflow-tooltip />
-        <el-table-column label="计入统计" width="90" align="center">
+        
+        <!-- 交易类型 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('transactionType')"
+          prop="transactionType" 
+          label="交易类型" 
+          width="120" 
+          show-overflow-tooltip 
+        />
+        
+        <!-- 支付渠道 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('paymentChannel')"
+          prop="paymentChannel" 
+          label="支付渠道" 
+          width="120" 
+          show-overflow-tooltip 
+        />
+        
+        <!-- 分类 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('category')"
+          prop="category" 
+          label="分类" 
+          width="120" 
+          show-overflow-tooltip 
+        />
+        
+        <!-- 二级分类 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('subCategory')"
+          prop="subCategory" 
+          label="二级分类" 
+          width="120" 
+          show-overflow-tooltip 
+        />
+        
+        <!-- 交易描述 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('transactionDesc')"
+          prop="transactionDesc" 
+          label="交易描述" 
+          min-width="150" 
+          show-overflow-tooltip 
+        />
+        
+        <!-- 用户备注 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('manualRemark')"
+          prop="manualRemark" 
+          label="用户备注" 
+          min-width="120" 
+          show-overflow-tooltip 
+        />
+        
+        <!-- 标签 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('tags')"
+          prop="tags" 
+          label="标签" 
+          width="120" 
+          show-overflow-tooltip 
+        />
+        
+        <!-- 是否计入收支 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('includeInStatistics')"
+          label="是否计入收支" 
+          width="90" 
+          align="center"
+        >
           <template #default="{ row }">
             <el-tag v-if="row.includeInStatistics === '1'" type="success">是</el-tag>
             <el-tag v-else type="info">否</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="手工记账" width="90" align="center">
+        
+        <!-- 手工记账 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('manualEntry')"
+          label="手工记账" 
+          width="90" 
+          align="center"
+        >
           <template #default="{ row }">
             <el-tag v-if="row.manualEntry === '1'" type="primary">是</el-tag>
             <el-tag v-else type="info">否</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right" align="center">
+        
+        <!-- 操作 -->
+        <el-table-column 
+          v-if="selectedColumns.includes('action')"
+          label="操作" 
+          width="150" 
+          fixed="right" 
+          align="center"
+        >
           <template #default="{ row }">
             <el-button link type="primary" @click="handleView(row)">查看</el-button>
             <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
@@ -184,6 +295,30 @@
       />
     </el-card>
 
+    <!-- 列设置弹窗 -->
+    <el-dialog
+      v-model="showColumnSettings"
+      title="列设置"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <div class="column-settings">
+        <el-checkbox-group v-model="selectedColumns">
+          <div 
+            v-for="col in allColumns" 
+            :key="col.prop"
+            class="column-item"
+          >
+            <el-checkbox :label="col.prop">{{ col.label }}</el-checkbox>
+          </div>
+        </el-checkbox-group>
+      </div>
+      <template #footer>
+        <el-button @click="resetToDefault">恢复默认</el-button>
+        <el-button type="primary" @click="saveColumnSettings">确定</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 新增/编辑弹窗 -->
     <el-dialog
       v-model="dialogVisible"
@@ -193,13 +328,13 @@
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="金额类型" prop="amountType">
-          <el-radio-group v-model="form.amountType" :disabled="isViewMode">
+          <el-radio-group v-model="form.amountType" :disabled="isViewMode || isEditMode">
             <el-radio label="INCOME">收入</el-radio>
             <el-radio label="EXPENSE">支出</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="金额" prop="amount">
-          <el-input-number v-model="form.amount" :min="0.01" :precision="2" :step="1" :disabled="isViewMode" />
+          <el-input-number v-model="form.amount" :min="0.01" :precision="2" :step="1" :disabled="isViewMode || isEditMode" />
         </el-form-item>
         <el-form-item label="分类" prop="category">
           <el-input v-model="form.category" placeholder="请输入分类" :disabled="isViewMode" />
@@ -210,7 +345,7 @@
             type="date"
             placeholder="选择日期"
             value-format="YYYY-MM-DD"
-            :disabled="isViewMode"
+            :disabled="isViewMode || isEditMode"
           />
         </el-form-item>
         <el-form-item label="交易时间">
@@ -218,19 +353,22 @@
             v-model="form.transactionTime"
             placeholder="选择时间"
             value-format="HH:mm:ss"
-            :disabled="isViewMode"
+            :disabled="isViewMode || isEditMode"
           />
+        </el-form-item>
+        <el-form-item label="交易类型">
+          <el-input v-model="form.transactionType" placeholder="请输入交易类型" :disabled="isViewMode || isEditMode" />
         </el-form-item>
         <el-form-item label="支付渠道">
           <el-input v-model="form.paymentChannel" placeholder="请输入支付渠道" :disabled="isViewMode" />
         </el-form-item>
         <el-form-item label="交易描述">
-          <el-input v-model="form.transactionDesc" type="textarea" :rows="3" :disabled="isViewMode" />
+          <el-input v-model="form.transactionDesc" type="textarea" :rows="3" :disabled="isViewMode || isEditMode" />
         </el-form-item>
         <el-form-item label="手工备注">
           <el-input v-model="form.manualRemark" type="textarea" :rows="2" :disabled="isViewMode" />
         </el-form-item>
-        <el-form-item label="计入统计">
+        <el-form-item label="是否计入收支">
           <el-switch v-model="form.includeInStatistics" active-value="1" inactive-value="0" :disabled="isViewMode" />
         </el-form-item>
       </el-form>
@@ -245,7 +383,81 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Setting } from '@element-plus/icons-vue'
 import { pageBills, getStatistics, createBill, updateBill, deleteBill } from '@/api/bill'
+
+// 列设置 - 所有可用列
+const allColumns = [
+  { prop: 'transactionDate', label: '交易日期' },
+  { prop: 'transactionTime', label: '交易时间' },
+  { prop: 'incomeAmount', label: '收入' },
+  { prop: 'expenseAmount', label: '支出' },
+  { prop: 'transactionType', label: '交易类型' },
+  { prop: 'paymentChannel', label: '支付渠道' },
+  { prop: 'category', label: '分类' },
+  { prop: 'subCategory', label: '二级分类' },
+  { prop: 'transactionDesc', label: '交易描述' },
+  { prop: 'manualRemark', label: '用户备注' },
+  { prop: 'tags', label: '标签' },
+  { prop: 'includeInStatistics', label: '是否计入收支' },
+  { prop: 'manualEntry', label: '手工记账' },
+  { prop: 'action', label: '操作' }
+]
+
+// 默认显示的列（所有字段）
+const defaultColumns = [
+  'transactionDate',
+  'transactionTime',
+  'incomeAmount',
+  'expenseAmount',
+  'transactionType',
+  'paymentChannel',
+  'category',
+  'subCategory',
+  'transactionDesc',
+  'manualRemark',
+  'tags',
+  'includeInStatistics',
+  'manualEntry',
+  'action'
+]
+
+// 列设置相关
+const showColumnSettings = ref(false)
+const selectedColumns = ref([...defaultColumns])
+
+// localStorage key
+const STORAGE_KEY = 'bill_list_columns'
+
+// 加载保存的列配置
+const loadColumnSettings = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      selectedColumns.value = JSON.parse(saved)
+    }
+  } catch (e) {
+    console.error('加载列配置失败:', e)
+    selectedColumns.value = [...defaultColumns]
+  }
+}
+
+// 保存列配置
+const saveColumnSettings = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedColumns.value))
+    ElMessage.success('列设置已保存')
+    showColumnSettings.value = false
+  } catch (e) {
+    ElMessage.error('保存失败')
+  }
+}
+
+// 恢复默认设置
+const resetToDefault = () => {
+  selectedColumns.value = [...defaultColumns]
+  ElMessage.success('已恢复默认设置')
+}
 
 // 查询表单
 const queryForm = reactive({
@@ -285,6 +497,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('记一笔')
 const formRef = ref()
 const isViewMode = ref(false) // 是否为查看模式
+const isEditMode = ref(false) // 是否为编辑模式
 const form = reactive({
   id: null,
   amountType: 'EXPENSE',
@@ -471,6 +684,8 @@ const toggleAdvancedSearch = () => {
 // 新增
 const handleCreate = () => {
   dialogTitle.value = '记一笔'
+  isViewMode.value = false // 重置查看模式
+  isEditMode.value = false // 重置编辑模式
   dialogVisible.value = true
   Object.assign(form, {
     id: null,
@@ -490,6 +705,7 @@ const handleCreate = () => {
 // 编辑
 const handleEdit = (row) => {
   dialogTitle.value = '编辑账单'
+  isEditMode.value = true // 设置为编辑模式
   dialogVisible.value = true
   Object.assign(form, {
     id: row.id,
@@ -590,6 +806,7 @@ const handleSubmit = async () => {
 const handleDialogClose = () => {
   formRef.value?.resetFields()
   isViewMode.value = false // 重置查看模式
+  isEditMode.value = false // 重置编辑模式
 }
 
 onMounted(() => {
@@ -597,6 +814,8 @@ onMounted(() => {
   if (quickDate.value === 'month') {
     handleQuickDateChange('month')
   }
+  // 加载保存的列配置
+  loadColumnSettings()
   loadData()
   loadStatistics()
 })
@@ -611,6 +830,26 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.card-header > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.column-settings {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.column-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.column-item:last-child {
+  border-bottom: none;
 }
 
 .query-form {

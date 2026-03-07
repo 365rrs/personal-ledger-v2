@@ -83,14 +83,14 @@
             )
         </if>
         
-        <!-- 最小金额 -->
+        <!-- 最小金额（同时筛选收入金额和支出金额） -->
         <if test="dto.minAmount != null">
-            AND income_amount &gt;= #{dto.minAmount}
+            AND (income_amount &gt;= #{dto.minAmount} OR expense_amount &gt;= #{dto.minAmount})
         </if>
         
-        <!-- 最大金额 -->
+        <!-- 最大金额（同时筛选收入金额和支出金额） -->
         <if test="dto.maxAmount != null">
-            AND income_amount &lt;= #{dto.maxAmount}
+            AND (income_amount &lt;= #{dto.maxAmount} OR expense_amount &lt;= #{dto.maxAmount})
         </if>
         
         <!-- 开始日期 -->
