@@ -42,16 +42,20 @@
 
 | 字段名 | 类型 | 长度 | 必填 | 默认值 | 说明 |
 |--------|------|------|------|--------|------|
-| id | BIGINT | - | 是 | 自增 | 主键ID |
+| id | BIGINT | - | 是 | 自增 | 主键 ID |
 | transaction_date | DATE | - | 是 | - | 交易日期 |
 | transaction_time | TIME | - | 否 | NULL | 交易时间 |
 | income_amount | DECIMAL | 10,2 | 否 | 0.00 | 收入金额 |
 | expense_amount | DECIMAL | 10,2 | 否 | 0.00 | 支出金额 |
-| transaction_type | VARCHAR | 20 | 是 | - | 交易类型 |
+| amount_type | VARCHAR | 20 | 是 | 'EXPENSE' | 金额类型：INCOME-收入，EXPENSE-支出 |
+| transaction_type | VARCHAR | 100 | 否 | NULL | 交易类型（原始值） |
 | transaction_desc | VARCHAR | 500 | 否 | NULL | 交易描述 |
 | payment_channel | VARCHAR | 50 | 否 | NULL | 支付渠道 |
-| category | VARCHAR | 50 | 是 | - | 分类 |
+| payment_channel_id | BIGINT | - | 否 | NULL | 支付渠道 ID |
+| category | VARCHAR | 50 | 否 | NULL | 分类 |
+| category_id | BIGINT | - | 否 | NULL | 分类 ID |
 | sub_category | VARCHAR | 50 | 否 | NULL | 二级分类 |
+| sub_category_id | BIGINT | - | 否 | NULL | 二级分类 ID |
 | manual_remark | VARCHAR | 500 | 否 | NULL | 手工备注 |
 | include_in_statistics | VARCHAR | 1 | 是 | '1' | 是否计入收支统计 |
 | manual_entry | VARCHAR | 1 | 是 | '0' | 是否手工记账 |
@@ -76,8 +80,10 @@
 - transaction_time：交易时间（可选），记录具体时间点
 
 **分类字段设计**：
-- category：一级分类（必填），如：餐饮、交通、工资等
+- category：一级分类（可选），如：餐饮、交通、工资等
+- category_id：一级分类 ID（可选），关联 bill_category 表
 - sub_category：二级分类（可选），如：早餐、午餐、晚餐等
+- sub_category_id：二级分类 ID（可选），关联 bill_category 表
 
 **标识字段**：
 - include_in_statistics：是否计入收支统计，用于排除某些特殊交易

@@ -171,21 +171,22 @@ bill_import_detail (1) ←→ (1) bill
 
 | 字段名 | 类型 | 长度 | 必填 | 默认值 | 说明 |
 |--------|------|------|------|--------|------|
-| id | BIGINT | - | 是 | 自增 | 主键ID |
-| import_record_id | BIGINT | - | 是 | - | 导入记录ID |
-| original_data | TEXT | - | 否 | NULL | 原始数据（JSON格式） |
-| type | VARCHAR | 20 | 否 | NULL | 类型 |
+| id | BIGINT | - | 是 | 自增 | 主键 ID |
+| import_record_id | BIGINT | - | 是 | - | 导入记录 ID |
+| original_data | TEXT | - | 否 | NULL | 原始数据（JSON 格式） |
+| amount_type | VARCHAR | 20 | 否 | NULL | 金额类型（INCOME/EXPENSE） |
 | amount | DECIMAL | 10,2 | 否 | NULL | 金额 |
+| transaction_type | VARCHAR | 100 | 否 | NULL | 交易类型（原始值） |
 | description | VARCHAR | 500 | 否 | NULL | 描述 |
 | transaction_time | DATETIME | - | 否 | NULL | 交易时间 |
 | import_status | VARCHAR | 20 | 是 | - | 导入状态 |
 | duplicate_status | VARCHAR | 20 | 是 | UNCHECKED | 重复状态 |
-| duplicate_ledger_id | BIGINT | - | 否 | NULL | 重复的账单ID |
+| duplicate_ledger_id | BIGINT | - | 否 | NULL | 重复的账单 ID |
 | data_hash | VARCHAR | 64 | 否 | NULL | 数据指纹 |
 | convert_status | VARCHAR | 20 | 是 | PENDING | 转账单状态 |
 | convert_error_message | VARCHAR | 500 | 否 | NULL | 转换错误信息 |
 | error_message | VARCHAR | 500 | 否 | NULL | 错误信息 |
-| ledger_id | BIGINT | - | 否 | NULL | 关联的账单ID |
+| ledger_id | BIGINT | - | 否 | NULL | 关联的账单 ID |
 | creator_code | VARCHAR | 50 | 否 | NULL | 创建人编码 |
 | updater_code | VARCHAR | 50 | 否 | NULL | 更新人编码 |
 | creator_name | VARCHAR | 50 | 否 | NULL | 创建人姓名 |
@@ -281,7 +282,7 @@ progress = (processed_count / total_count) * 100  // 后端计算返回，不存
 用户可以查看某次导入的所有明细记录
 
 #### 功能要点
-- 展示字段：ID、类型、金额、描述、交易时间、导入状态、重复状态、转换状态、错误信息、转换错误信息
+- 展示字段：ID、金额类型、金额、交易类型、描述、交易时间、导入状态、重复状态、转换状态、错误信息、转换错误信息
 - 支持筛选：
   - 按导入状态筛选（成功/失败）
   - 按重复状态筛选（唯一/重复）
@@ -304,7 +305,7 @@ progress = (processed_count / total_count) * 100  // 后端计算返回，不存
 系统自动检测导入数据是否与已有账单重复
 
 #### 检测规则
-- 计算数据指纹：`MD5(type + amount + transaction_time + description)`
+- 计算数据指纹：`MD5(amount_type + amount + transaction_time + description)`
 - 在 bill 表中查找相同 data_hash 的记录
 - 如果存在且未被删除，则标记为重复
 

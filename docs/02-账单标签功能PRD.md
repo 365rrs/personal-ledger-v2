@@ -47,9 +47,14 @@
 | tag_category | VARCHAR | 50 | 否 | NULL | 标签分类 |
 | tag_color | VARCHAR | 20 | 否 | NULL | 标签颜色 |
 | sort_order | INT | - | 是 | 0 | 排序序号 |
-| tag_status | VARCHAR | 10 | 是 | 'enable' | 状态：enable-启用，disable-停用 |
+| tag_status | VARCHAR | 10 | 否 | 'enable' | 状态：enable-启用，disable-停用 |
+| creator_code | VARCHAR | 50 | 否 | NULL | 创建人编码 |
+| updater_code | VARCHAR | 50 | 否 | NULL | 更新人编码 |
+| creator_name | VARCHAR | 50 | 否 | NULL | 创建人姓名 |
+| updater_name | VARCHAR | 50 | 否 | NULL | 更新人姓名 |
 | create_time | DATETIME | - | 是 | CURRENT_TIMESTAMP | 创建时间 |
 | update_time | DATETIME | - | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | VARCHAR | 1 | 是 | '0' | 逻辑删除标识 |
 
 ### 2.2 bill_tag_relation（账单标签关联表）
 

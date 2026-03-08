@@ -42,13 +42,20 @@
 
 | 字段名 | 类型 | 长度 | 必填 | 默认值 | 说明 |
 |--------|------|------|------|--------|------|
-| id | BIGINT | - | 是 | 自增 | 主键ID |
+| id | BIGINT | - | 是 | 自增 | 主键 ID |
 | category_name | VARCHAR | 50 | 是 | - | 分类名称 |
-| category_type | VARCHAR | 20 | 是 | - | 分类类型 |
-| parent_id | BIGINT | - | 否 | NULL | 父分类ID |
+| category_type | VARCHAR | 20 | 是 | - | 分类类型：INCOME-收入分类，EXPENSE-支出分类 |
+| parent_id | BIGINT | - | 否 | NULL | 父分类 ID（二级分类使用） |
 | icon | VARCHAR | 50 | 否 | NULL | 图标 |
-| enabled | VARCHAR | 1 | 是 | '1' | 是否启用 |
+| enabled | VARCHAR | 1 | 是 | '1' | 是否启用：0-禁用，1-启用 |
 | sort_order | INT | - | 是 | 0 | 排序序号 |
+| creator_code | VARCHAR | 50 | 否 | NULL | 创建人编码 |
+| updater_code | VARCHAR | 50 | 否 | NULL | 更新人编码 |
+| creator_name | VARCHAR | 50 | 否 | NULL | 创建人姓名 |
+| updater_name | VARCHAR | 50 | 否 | NULL | 更新人姓名 |
+| create_time | DATETIME | - | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | - | 是 | CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
+| deleted | VARCHAR | 1 | 是 | '0' | 逻辑删除标识 |
 
 #### 分类类型枚举
 
