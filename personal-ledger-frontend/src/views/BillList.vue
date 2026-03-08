@@ -99,7 +99,24 @@
             <!-- 第四行：支付渠道 + 交易类型 + 标签 -->
             <div style="margin-bottom: 12px;">
               <span style="margin-right: 12px;">支付渠道：</span>
-              <el-input v-model="queryForm.paymentChannel" placeholder="请输入支付渠道" clearable style="width: 150px; margin-right: 12px;" />
+              <el-select 
+                v-model="queryForm.paymentChannel" 
+                placeholder="请选择支付渠道" 
+                filterable
+                clearable 
+                style="width: 150px; margin-right: 12px;"
+              >
+                <el-option
+                  v-for="channel in paymentChannelList"
+                  :key="channel.id"
+                  :label="channel.channelName"
+                  :value="channel.channelName"
+                >
+                  <span style="margin-right: 8px;">{{ channel.icon }}</span>
+                  <span>{{ channel.channelName }}</span>
+                  <el-tag v-if="channel.channelType" size="small" style="margin-left: 4px;">{{ getChannelTypeLabel(channel.channelType) }}</el-tag>
+                </el-option>
+              </el-select>
               
               <span style="margin-right: 12px;">交易类型：</span>
               <el-input v-model="queryForm.transactionType" placeholder="请输入交易类型" clearable style="width: 150px; margin-right: 12px;" />
@@ -244,9 +261,18 @@
           v-if="selectedColumns.includes('paymentChannel')"
           prop="paymentChannel" 
           label="支付渠道" 
-          width="120" 
+          width="150" 
           show-overflow-tooltip 
-        />
+        >
+          <template #default="{ row }">
+            <div v-if="row.paymentChannel" style="display: flex; align-items: center; gap: 6px;">
+              <span v-if="row.paymentChannelIcon" style="font-size: 18px;">{{ row.paymentChannelIcon }}</span>
+              <span>{{ row.paymentChannel }}</span>
+              <el-tag v-if="row.paymentChannelType" size="small">{{ getChannelTypeLabel(row.paymentChannelType) }}</el-tag>
+            </div>
+            <span v-else style="color: #999;">-</span>
+          </template>
+        </el-table-column>
         
         <!-- 分类 -->
         <el-table-column 
@@ -458,7 +484,25 @@
           <el-input v-model="form.transactionType" placeholder="请输入交易类型" :disabled="isViewMode || isEditMode" />
         </el-form-item>
         <el-form-item label="支付渠道">
-          <el-input v-model="form.paymentChannel" placeholder="请输入支付渠道" :disabled="isViewMode" />
+          <el-select 
+            v-model="form.paymentChannel" 
+            placeholder="请选择支付渠道" 
+            filterable
+            clearable
+            :disabled="isViewMode"
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="channel in paymentChannelList"
+              :key="channel.id"
+              :label="channel.channelName"
+              :value="channel.channelName"
+            >
+              <span style="margin-right: 8px;">{{ channel.icon }}</span>
+              <span>{{ channel.channelName }}</span>
+              <el-tag v-if="channel.channelType" size="small" style="margin-left: 4px;">{{ getChannelTypeLabel(channel.channelType) }}</el-tag>
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="交易描述">
           <el-input v-model="form.transactionDesc" type="textarea" :rows="3" :disabled="isViewMode || isEditMode" />
@@ -534,6 +578,7 @@ import { Setting } from '@element-plus/icons-vue'
 import { pageBills, getStatistics, createBill, updateBill, deleteBill } from '@/api/bill'
 import { getTagList } from '@/api/tag'
 import { getCategoryList } from '@/api/category'
+import { listPaymentChannels } from '@/api/paymentChannel'
 
 // 列设置 - 所有可用列
 const allColumns = [
@@ -647,6 +692,9 @@ const tagList = ref([])
 // 分类列表
 const categoryList = ref([])
 
+// 支付渠道列表
+const paymentChannelList = ref([])
+
 // 当前选中的分类 ID（用于筛选二级分类）
 const selectedCategoryId = ref(null)
 
@@ -667,6 +715,17 @@ const loadCategoryList = async () => {
     categoryList.value = (res.data || []).filter(cat => !cat.parentId)  // 只取一级分类
   } catch (error) {
     console.error('加载分类列表失败:', error)
+  }
+}
+
+// 加载支付渠道列表（按排序）
+const loadPaymentChannelList = async () => {
+  try {
+    const res = await listPaymentChannels({ size: 100 })
+    // 按 sortOrder 排序
+    paymentChannelList.value = (res.data || []).sort((a, b) => a.sortOrder - b.sortOrder)
+  } catch (error) {
+    console.error('加载支付渠道列表失败:', error)
   }
 }
 
@@ -714,6 +773,20 @@ const getTagName = (tagId) => {
 const getTagColor = (tagId) => {
   const tag = tagList.value.find(t => t.id === tagId)
   return tag && tag.tagColor ? tag.tagColor : '#409EFF' // 默认蓝色
+}
+
+// 渠道类型映射
+const channelTypeMap = {
+  'CASH': '现金',
+  'BANK_CARD': '银行卡',
+  'CREDIT_CARD': '信用卡',
+  'E_WALLET': '电子钱包',
+  'OTHER': '其他'
+}
+
+// 获取渠道类型标签
+const getChannelTypeLabel = (type) => {
+  return channelTypeMap[type] || type
 }
 
 // 弹窗
@@ -1078,6 +1151,7 @@ onMounted(() => {
   // 加载标签列表
   loadTagList()
   loadCategoryList()  // 加载分类列表
+  loadPaymentChannelList()  // 加载支付渠道列表
   loadData()
   loadStatistics()
 })

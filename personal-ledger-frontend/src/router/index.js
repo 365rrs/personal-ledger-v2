@@ -41,6 +41,11 @@ const routes = [
         path: 'bill',
         name: 'BillList',
         component: () => import('../views/BillList.vue')
+      },
+      {
+        path: 'payment-channel',
+        name: 'PaymentChannel',
+        component: () => import('../views/PaymentChannel.vue')
       }
     ]
   }
