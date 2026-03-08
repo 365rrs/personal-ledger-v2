@@ -264,7 +264,6 @@
             <span v-if="row.amountType === 'INCOME'" style="color: #67c23a;">
               {{ row.incomeAmount }}
             </span>
-            <span v-else>-</span>
           </template>
         </el-table-column>
         
@@ -279,7 +278,6 @@
             <span v-if="row.amountType === 'EXPENSE'" style="color: #f56c6c;">
               {{ row.expenseAmount }}
             </span>
-            <span v-else>-</span>
           </template>
         </el-table-column>
         

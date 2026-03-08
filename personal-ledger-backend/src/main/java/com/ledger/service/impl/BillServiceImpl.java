@@ -61,13 +61,13 @@ public class BillServiceImpl implements BillService {
         bill.setManualEntry("1");
 
         // 计算数据指纹
-        String type = bill.getAmountType();
-        BigDecimal amount = "INCOME".equals(type) ? bill.getIncomeAmount() : bill.getExpenseAmount();
+        String amountType = bill.getAmountType();
+        BigDecimal amount = "INCOME".equals(amountType) ? bill.getIncomeAmount() : bill.getExpenseAmount();
         LocalDateTime transactionDateTime = LocalDateTime.of(
                 bill.getTransactionDate(),
                 bill.getTransactionTime() != null ? bill.getTransactionTime() : java.time.LocalTime.of(0, 0)
         );
-        String dataHash = DataHashUtil.calculateHash(type, amount, transactionDateTime, bill.getTransactionDesc());
+        String dataHash = DataHashUtil.calculateHash(amountType, amount, transactionDateTime, bill.getTransactionDesc());
         bill.setDataHash(dataHash);
 
         billMapper.insert(bill);

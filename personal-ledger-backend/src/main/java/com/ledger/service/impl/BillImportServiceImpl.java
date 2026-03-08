@@ -266,8 +266,8 @@ public class BillImportServiceImpl implements BillImportService {
             throw new BusinessException("导入记录不存在");
         }
 
-        record.setDeleted("1");
-        importRecordMapper.updateById(record);
+        // 使用 removeById 进行逻辑删除
+        importRecordMapper.deleteById(id);
     }
 
     /**
@@ -476,13 +476,13 @@ public class BillImportServiceImpl implements BillImportService {
                 }
 
                 // 判断类型和金额
-                String type;
+                String amountType;
                 BigDecimal amount;
                 if (income != null && income.compareTo(BigDecimal.ZERO) > 0) {
-                    type = "INCOME";
+                    amountType = "INCOME";
                     amount = income;
                 } else if (expense != null && expense.compareTo(BigDecimal.ZERO) > 0) {
-                    type = "EXPENSE";
+                    amountType = "EXPENSE";
                     amount = expense;
                 } else {
                     throw new BusinessException("收入和支出不能同时为空");
@@ -490,14 +490,14 @@ public class BillImportServiceImpl implements BillImportService {
 
                 LocalDateTime transactionDateTime = LocalDateTime.of(transactionDate, transactionTime);
 
-                detail.setAmountType(type);
+                detail.setAmountType(amountType);
                 detail.setAmount(amount);
                 detail.setTransactionType(record.getTransactionType()); // 保存原始交易类型
                 detail.setDescription(description);
                 detail.setTransactionTime(transactionDateTime);
 
                 // 计算数据指纹
-                String dataHash = DataHashUtil.calculateHash(type, amount, transactionDateTime, description);
+                String dataHash = DataHashUtil.calculateHash(amountType, amount, transactionDateTime, description);
                 detail.setDataHash(dataHash);
 
                 detail.setImportStatus("SUCCESS");
@@ -524,26 +524,31 @@ public class BillImportServiceImpl implements BillImportService {
                 .map(BillImportDetail::getDataHash)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
+    
         if (dataHashes.isEmpty()) {
+            log.warn("没有需要检查重复的数据");
             return;
         }
-
+    
+        log.info("转换前重复检测，待检查数据量：{}, 数据指纹列表：{}", dataHashes.size(), dataHashes);
+    
         // 批量查询已存在的账单
         LambdaQueryWrapper<Bill> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Bill::getDataHash, dataHashes)
                 .eq(Bill::getDeleted, "0");
         List<Bill> existingBills = billMapper.selectList(wrapper);
-
-        // 构建数据指纹到账单ID的映射
+    
+        log.info("数据库中找到 {} 个匹配的账单", existingBills.size());
+    
+        // 构建数据指纹到账单 ID 的映射
         Map<String, Long> hashToBillId = existingBills.stream()
                 .collect(Collectors.toMap(Bill::getDataHash, Bill::getId, (a, b) -> a));
-
+    
         // 更新明细的重复状态
         for (BillImportDetail detail : details) {
             Long duplicateBillId = hashToBillId.get(detail.getDataHash());
             if (duplicateBillId != null) {
-                log.warn("明细ID: {} 在转换前检测到重复，重复账单ID: {}", detail.getId(), duplicateBillId);
+                log.warn("明细 ID: {} 在转换前检测到重复，重复账单 ID: {}", detail.getId(), duplicateBillId);
                 detail.setDuplicateStatus("DUPLICATE");
                 detail.setDuplicateLedgerId(duplicateBillId);
                 detail.setConvertStatus("DUPLICATE");
@@ -562,38 +567,47 @@ public class BillImportServiceImpl implements BillImportService {
                 .map(BillImportDetail::getDataHash)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
+    
         if (dataHashes.isEmpty()) {
+            log.warn("没有需要检查重复的数据");
             return;
         }
-
+    
+        log.info("开始重复检测，待检查数据量：{}, 数据指纹列表：{}", dataHashes.size(), dataHashes);
+    
         // 批量查询已存在的账单
         LambdaQueryWrapper<Bill> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Bill::getDataHash, dataHashes)
                 .eq(Bill::getDeleted, "0");
         List<Bill> existingBills = billMapper.selectList(wrapper);
-
-        // 构建数据指纹到账单ID的映射
+    
+        log.info("数据库中找到 {} 个匹配的账单", existingBills.size());
+    
+        // 构建数据指纹到账单 ID 的映射
         Map<String, Long> hashToBillId = existingBills.stream()
                 .collect(Collectors.toMap(Bill::getDataHash, Bill::getId, (a, b) -> a));
-
+    
         // 更新明细的重复状态
         for (BillImportDetail detail : details) {
             if (!"SUCCESS".equals(detail.getImportStatus())) {
                 continue;
             }
-
+    
             Long duplicateBillId = hashToBillId.get(detail.getDataHash());
             if (duplicateBillId != null) {
+                log.warn("检测到重复 - 明细 ID: {}, 数据指纹：{}, 重复账单 ID: {}", 
+                        detail.getId(), detail.getDataHash(), duplicateBillId);
                 detail.setDuplicateStatus("DUPLICATE");
                 detail.setDuplicateLedgerId(duplicateBillId);
                 detail.setConvertStatus("DUPLICATE");
             } else {
                 detail.setDuplicateStatus("UNIQUE");
             }
-
+    
             importDetailMapper.updateById(detail);
         }
+            
+        log.info("重复检测完成");
     }
 
     /**
