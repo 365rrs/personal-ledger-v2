@@ -160,9 +160,9 @@
               />
               
               <span style="margin-right: 12px;">金额范围：</span>
-              <el-input-number v-model="queryForm.minAmount" placeholder="最小金额" :min="0" :precision="2" style="width: 120px; margin-right: 8px;" />
+              <el-input-number v-model="queryForm.minAmount" placeholder="最小金额" :min="0" :precision="2" style="width: 160px; margin-right: 8px;" />
               <span style="margin: 0 8px;">至</span>
-              <el-input-number v-model="queryForm.maxAmount" placeholder="最大金额" :min="0" :precision="2" style="width: 120px;" />
+              <el-input-number v-model="queryForm.maxAmount" placeholder="最大金额" :min="0" :precision="2" style="width: 160px;" />
             </div>
           </div>
         </el-collapse-transition>
