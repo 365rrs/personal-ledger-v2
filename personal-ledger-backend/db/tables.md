@@ -105,12 +105,12 @@ CREATE TABLE IF NOT EXISTS bill_import_record (
 
 | 字段名 | 类型 | 长度 | 允许NULL | 默认值 | 说明 |
 |--------|------|------|----------|--------|------|
-| id | BIGINT | - | NO | AUTO_INCREMENT | 主键ID |
-| import_record_id | BIGINT | - | NO | - | 导入记录ID |
-| original_data | TEXT | - | YES | NULL | 原始数据（JSON格式） |
-| type | VARCHAR | 20 | YES | NULL | 类型 |
+| id | BIGINT | - | NO | AUTO_INCREMENT | 主键 ID |
+| import_record_id | BIGINT | - | NO | - | 导入记录 ID |
+| original_data | TEXT | - | YES | NULL | 原始数据（JSON 格式） |
+| amount_type | VARCHAR | 20 | YES | NULL | 金额类型（INCOME/EXPENSE） |
 | amount | DECIMAL | 10,2 | YES | NULL | 金额 |
-| category | VARCHAR | 50 | YES | NULL | 分类 |
+| transaction_type | VARCHAR | 100 | YES | NULL | 交易类型（原始值） |
 | description | VARCHAR | 500 | YES | NULL | 描述 |
 | transaction_time | DATETIME | - | YES | NULL | 交易时间 |
 | import_status | VARCHAR | 20 | NO | - | 导入状态：SUCCESS-成功，FAILED-失败 |
@@ -145,22 +145,22 @@ CREATE TABLE IF NOT EXISTS bill_import_record (
 
 ```sql
 CREATE TABLE IF NOT EXISTS bill_import_detail (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
-    import_record_id BIGINT NOT NULL COMMENT '导入记录ID',
-    original_data TEXT COMMENT '原始数据（JSON格式）',
-    type VARCHAR(20) COMMENT '类型',
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键 ID',
+    import_record_id BIGINT NOT NULL COMMENT '导入记录 ID',
+    original_data TEXT COMMENT '原始数据（JSON 格式）',
+    amount_type VARCHAR(20) COMMENT '金额类型（INCOME/EXPENSE）',
     amount DECIMAL(10, 2) COMMENT '金额',
-    category VARCHAR(50) COMMENT '分类',
+    transaction_type VARCHAR(100) COMMENT '交易类型（原始值）',
     description VARCHAR(500) COMMENT '描述',
     transaction_time DATETIME COMMENT '交易时间',
     import_status VARCHAR(20) NOT NULL COMMENT '导入状态：SUCCESS-成功，FAILED-失败',
     duplicate_status VARCHAR(20) NOT NULL DEFAULT 'UNCHECKED' COMMENT '重复状态：UNCHECKED-未检查，UNIQUE-唯一，DUPLICATE-重复',
-    duplicate_ledger_id BIGINT COMMENT '重复的账单ID（如果是重复记录）',
+    duplicate_ledger_id BIGINT COMMENT '重复的账单 ID（如果是重复记录）',
     data_hash VARCHAR(64) COMMENT '数据指纹（用于重复检测）',
     convert_status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '转账单状态：PENDING-待转换，CONVERTED-已转换，SKIPPED-已跳过，DUPLICATE-重复跳过，CONVERT_FAILED-转换失败',
     convert_error_message VARCHAR(500) COMMENT '转换错误信息',
     error_message VARCHAR(500) COMMENT '错误信息',
-    ledger_id BIGINT COMMENT '关联的账单ID（转换成功后）',
+    ledger_id BIGINT COMMENT '关联的账单 ID（转换成功后）',
     creator_code VARCHAR(50) COMMENT '创建人编码',
     updater_code VARCHAR(50) COMMENT '更新人编码',
     creator_name VARCHAR(50) COMMENT '创建人姓名',
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS bill_import_detail (
 
 **数据指纹计算**：
 ```
-data_hash = MD5(type + amount + transaction_time + description)
+data_hash = MD5(amount_type + amount + transaction_time + description)
 ```
 
 **重复判断逻辑**：
@@ -230,18 +230,22 @@ data_hash = MD5(type + amount + transaction_time + description)
 
 ### 字段定义
 
-| 字段名 | 类型 | 长度 | 允许NULL | 默认值 | 说明 |
+| 字段名 | 类型 | 长度 | 允许 NULL | 默认值 | 说明 |
 |--------|------|------|----------|--------|------|
-| id | BIGINT | - | NO | AUTO_INCREMENT | 主键ID |
+| id | BIGINT | - | NO | AUTO_INCREMENT | 主键 ID |
 | transaction_date | DATE | - | NO | - | 交易日期 |
 | transaction_time | TIME | - | YES | NULL | 交易时间 |
 | income_amount | DECIMAL | 10,2 | YES | 0.00 | 收入金额 |
 | expense_amount | DECIMAL | 10,2 | YES | 0.00 | 支出金额 |
-| transaction_type | VARCHAR | 20 | NO | - | 交易类型：INCOME-收入，EXPENSE-支出 |
+| amount_type | VARCHAR | 20 | NO | 'EXPENSE' | 金额类型：INCOME-收入，EXPENSE-支出 |
+| transaction_type | VARCHAR | 100 | YES | NULL | 交易类型（原始值） |
 | transaction_desc | VARCHAR | 500 | YES | NULL | 交易描述 |
 | payment_channel | VARCHAR | 50 | YES | NULL | 支付渠道 |
-| category | VARCHAR | 50 | NO | - | 分类 |
+| payment_channel_id | BIGINT | - | YES | NULL | 支付渠道 ID |
+| category | VARCHAR | 50 | YES | NULL | 分类 |
+| category_id | BIGINT | - | YES | NULL | 分类 ID |
 | sub_category | VARCHAR | 50 | YES | NULL | 二级分类 |
+| sub_category_id | BIGINT | - | YES | NULL | 二级分类 ID |
 | manual_remark | VARCHAR | 500 | YES | NULL | 手工备注 |
 | include_in_statistics | VARCHAR | 1 | NO | '1' | 是否计入收支统计：0-不计入，1-计入 |
 | manual_entry | VARCHAR | 1 | NO | '0' | 是否手工记账：0-否，1-是 |
@@ -261,7 +265,8 @@ data_hash = MD5(type + amount + transaction_time + description)
 | PRIMARY | 主键索引 | id | 主键 |
 | idx_transaction_date | 普通索引 | transaction_date | 交易日期查询 |
 | idx_transaction_type | 普通索引 | transaction_type | 交易类型查询 |
-| idx_category | 普通索引 | category | 分类查询 |
+| idx_category_id | 普通索引 | category_id | 分类 ID 查询 |
+| idx_sub_category_id | 普通索引 | sub_category_id | 二级分类 ID 查询 |
 | idx_data_hash | 普通索引 | data_hash | 数据指纹查询（重复检测） |
 | idx_create_time | 普通索引 | create_time | 创建时间查询 |
 
@@ -269,16 +274,20 @@ data_hash = MD5(type + amount + transaction_time + description)
 
 ```sql
 CREATE TABLE IF NOT EXISTS bill (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键 ID',
     transaction_date DATE NOT NULL COMMENT '交易日期',
     transaction_time TIME COMMENT '交易时间',
     income_amount DECIMAL(10, 2) DEFAULT 0.00 COMMENT '收入金额',
     expense_amount DECIMAL(10, 2) DEFAULT 0.00 COMMENT '支出金额',
-    transaction_type VARCHAR(20) NOT NULL COMMENT '交易类型：INCOME-收入，EXPENSE-支出',
+    amount_type VARCHAR(20) NOT NULL DEFAULT 'EXPENSE' COMMENT '金额类型：INCOME-收入，EXPENSE-支出',
+    transaction_type VARCHAR(100) COMMENT '交易类型（原始值）',
     transaction_desc VARCHAR(500) COMMENT '交易描述',
     payment_channel VARCHAR(50) COMMENT '支付渠道',
-    category VARCHAR(50) NOT NULL COMMENT '分类',
+    payment_channel_id BIGINT COMMENT '支付渠道 ID',
+    category VARCHAR(50) COMMENT '分类',
+    category_id BIGINT COMMENT '分类 ID',
     sub_category VARCHAR(50) COMMENT '二级分类',
+    sub_category_id BIGINT COMMENT '二级分类 ID',
     manual_remark VARCHAR(500) COMMENT '手工备注',
     include_in_statistics VARCHAR(1) NOT NULL DEFAULT '1' COMMENT '是否计入收支统计：0-不计入，1-计入',
     manual_entry VARCHAR(1) NOT NULL DEFAULT '0' COMMENT '是否手工记账：0-否，1-是',
@@ -290,11 +299,12 @@ CREATE TABLE IF NOT EXISTS bill (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted VARCHAR(1) DEFAULT '0' COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    INDEX idx_transaction_date (transaction_date),
-    INDEX idx_transaction_type (transaction_type),
-    INDEX idx_category (category),
+    INDEX idx_category_id (category_id),
+    INDEX idx_create_time (create_time),
     INDEX idx_data_hash (data_hash),
-    INDEX idx_create_time (create_time)
+    INDEX idx_sub_category_id (sub_category_id),
+    INDEX idx_transaction_date (transaction_date),
+    INDEX idx_transaction_type (transaction_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账单表';
 ```
 
@@ -310,8 +320,10 @@ CREATE TABLE IF NOT EXISTS bill (
 - transaction_time：交易时间（可选），记录具体时间点
 
 **分类字段设计**：
-- category：一级分类（必填），如：餐饮、交通、工资等
+- category：一级分类（可选），如：餐饮、交通、工资等
+- category_id：一级分类 ID（可选），关联 bill_category 表
 - sub_category：二级分类（可选），如：早餐、午餐、晚餐等
+- sub_category_id：二级分类 ID（可选），关联 bill_category 表
 
 **标识字段**：
 - include_in_statistics：是否计入收支统计，用于排除某些特殊交易
@@ -329,11 +341,12 @@ CREATE TABLE IF NOT EXISTS bill (
 
 | 字段名 | 类型 | 长度 | 允许NULL | 默认值 | 说明 |
 |--------|------|------|----------|--------|------|
-| id | BIGINT | - | NO | AUTO_INCREMENT | 主键ID |
+| id | BIGINT | - | NO | AUTO_INCREMENT | 主键 ID |
 | tag_name | VARCHAR | 50 | NO | - | 标签名称 |
 | tag_category | VARCHAR | 50 | YES | NULL | 标签分类 |
 | tag_color | VARCHAR | 20 | YES | NULL | 标签颜色 |
 | sort_order | INT | - | NO | 0 | 排序序号 |
+| tag_status | VARCHAR | 10 | YES | 'enable' | 状态：enable-启用，disable-停用 |
 | creator_code | VARCHAR | 50 | YES | NULL | 创建人编码 |
 | updater_code | VARCHAR | 50 | YES | NULL | 更新人编码 |
 | creator_name | VARCHAR | 50 | YES | NULL | 创建人姓名 |
@@ -354,11 +367,12 @@ CREATE TABLE IF NOT EXISTS bill (
 
 ```sql
 CREATE TABLE IF NOT EXISTS bill_tag (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键 ID',
     tag_name VARCHAR(50) NOT NULL COMMENT '标签名称',
     tag_category VARCHAR(50) COMMENT '标签分类',
     tag_color VARCHAR(20) COMMENT '标签颜色',
     sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+    tag_status VARCHAR(10) DEFAULT 'enable' COMMENT '状态：enable-启用，disable-停用',
     creator_code VARCHAR(50) COMMENT '创建人编码',
     updater_code VARCHAR(50) COMMENT '更新人编码',
     creator_name VARCHAR(50) COMMENT '创建人姓名',

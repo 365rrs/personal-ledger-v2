@@ -75,17 +75,20 @@ CREATE TABLE IF NOT EXISTS bill_import_detail (
 -- 3. bill（账单表）
 -- ============================================
 CREATE TABLE IF NOT EXISTS bill (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键 ID',
     transaction_date DATE NOT NULL COMMENT '交易日期',
     transaction_time TIME COMMENT '交易时间',
     income_amount DECIMAL(10, 2) DEFAULT 0.00 COMMENT '收入金额',
     expense_amount DECIMAL(10, 2) DEFAULT 0.00 COMMENT '支出金额',
-    amount_type VARCHAR(20) NOT NULL COMMENT '金额类型：INCOME-收入，EXPENSE-支出',
+    amount_type VARCHAR(20) NOT NULL DEFAULT 'EXPENSE' COMMENT '金额类型：INCOME-收入，EXPENSE-支出',
     transaction_type VARCHAR(100) COMMENT '交易类型（原始值）',
     transaction_desc VARCHAR(500) COMMENT '交易描述',
     payment_channel VARCHAR(50) COMMENT '支付渠道',
-    category VARCHAR(50) NOT NULL COMMENT '分类',
+    payment_channel_id BIGINT COMMENT '支付渠道 ID',
+    category VARCHAR(50) COMMENT '分类',
+    category_id BIGINT COMMENT '分类 ID',
     sub_category VARCHAR(50) COMMENT '二级分类',
+    sub_category_id BIGINT COMMENT '二级分类 ID',
     manual_remark VARCHAR(500) COMMENT '手工备注',
     include_in_statistics VARCHAR(1) NOT NULL DEFAULT '1' COMMENT '是否计入收支统计：0-不计入，1-计入',
     manual_entry VARCHAR(1) NOT NULL DEFAULT '0' COMMENT '是否手工记账：0-否，1-是',
@@ -97,22 +100,24 @@ CREATE TABLE IF NOT EXISTS bill (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted VARCHAR(1) DEFAULT '0' COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    INDEX idx_transaction_date (transaction_date),
-    INDEX idx_transaction_type (transaction_type),
-    INDEX idx_category (category),
+    INDEX idx_category_id (category_id),
+    INDEX idx_create_time (create_time),
     INDEX idx_data_hash (data_hash),
-    INDEX idx_create_time (create_time)
+    INDEX idx_sub_category_id (sub_category_id),
+    INDEX idx_transaction_date (transaction_date),
+    INDEX idx_transaction_type (transaction_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账单表';
 
 -- ============================================
 -- 4. bill_tag（标签表）
 -- ============================================
 CREATE TABLE IF NOT EXISTS bill_tag (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键 ID',
     tag_name VARCHAR(50) NOT NULL COMMENT '标签名称',
     tag_category VARCHAR(50) COMMENT '标签分类',
     tag_color VARCHAR(20) COMMENT '标签颜色',
     sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
+    tag_status VARCHAR(10) DEFAULT 'enable' COMMENT '状态：enable-启用，disable-停用',
     creator_code VARCHAR(50) COMMENT '创建人编码',
     updater_code VARCHAR(50) COMMENT '更新人编码',
     creator_name VARCHAR(50) COMMENT '创建人姓名',
