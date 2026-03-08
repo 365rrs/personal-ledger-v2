@@ -59,6 +59,11 @@ public class BillDTO {
     
     private String paymentChannel;
     
+    /**
+     * 支付渠道 ID
+     */
+    private Long paymentChannelId;
+    
     private String manualRemark;
     
     private String includeInStatistics;

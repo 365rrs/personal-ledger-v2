@@ -1,6 +1,7 @@
 package com.ledger.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.ledger.dto.BillBatchUpdateDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.vo.BillStatisticsVO;
@@ -43,4 +44,9 @@ public interface BillService {
      * 查询统计数据
      */
     BillStatisticsVO getStatistics(BillQueryDTO dto);
+    
+    /**
+     * 批量更新账单
+     */
+    void batchUpdate(BillBatchUpdateDTO dto);
 }

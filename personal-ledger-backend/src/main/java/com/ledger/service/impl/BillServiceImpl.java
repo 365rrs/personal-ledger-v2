@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.converter.BillConverter;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
+import com.ledger.dto.BillBatchUpdateDTO;
 import com.ledger.entity.Bill;
 import com.ledger.entity.BillTagRelation;
 import com.ledger.enums.IncludeInStatisticsEnum;
@@ -161,6 +162,64 @@ public class BillServiceImpl implements BillService {
         }
 
         return statistics;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdate(BillBatchUpdateDTO dto) {
+        log.info("开始批量更新账单 - billIds: {}, size: {}, updateFields: {}", 
+                dto.getBillIds(), dto.getBillIds().size(), dto.getUpdateFields());
+        
+        // 如果没有指定更新字段，则不执行任何操作
+        if (dto.getUpdateFields() == null || dto.getUpdateFields().isEmpty()) {
+            log.warn("未指定需要更新的字段，跳过批量更新");
+            return;
+        }
+        
+        for (Long billId : dto.getBillIds()) {
+            try {
+                Bill bill = billMapper.selectById(billId);
+                if (bill == null) {
+                    log.warn("账单不存在，跳过 - id: {}", billId);
+                    continue;
+                }
+                
+                // 根据 updateFields 明确更新对应的字段（允许设置为空值）
+                if (dto.getUpdateFields().contains("paymentChannel")) {
+                    bill.setPaymentChannel(dto.getPaymentChannel());
+                }
+                
+                if (dto.getUpdateFields().contains("categoryId")) {
+                    bill.setCategoryId(dto.getCategoryId());
+                    bill.setCategory(dto.getCategory());
+                    bill.setSubCategoryId(dto.getSubCategoryId());
+                    bill.setSubCategory(dto.getSubCategory());
+                }
+                
+                if (dto.getUpdateFields().contains("manualRemark")) {
+                    bill.setManualRemark(dto.getManualRemark());
+                }
+                
+                if (dto.getUpdateFields().contains("includeInStatistics")) {
+                    bill.setIncludeInStatistics(dto.getIncludeInStatistics());
+                }
+                
+                // 更新账单
+                billMapper.updateById(bill);
+                
+                // 处理标签关联关系（如果提供了标签 ID 列表且在更新字段中）
+                if (dto.getUpdateFields().contains("tagIds") && dto.getTagIds() != null) {
+                    updateTagRelations(billId, dto.getTagIds());
+                }
+                
+                log.info("账单更新成功 - id: {}", billId);
+            } catch (Exception e) {
+                log.error("批量更新账单失败 - id: {}", billId, e);
+                // 继续处理下一个，不中断整个流程
+            }
+        }
+        
+        log.info("批量更新账单完成");
     }
 
     /**

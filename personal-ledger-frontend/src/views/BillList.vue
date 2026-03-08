@@ -199,8 +199,44 @@
         </div>
       </div>
 
+      <!-- 批量操作工具栏 -->
+      <div v-if="selectedRows.length > 0" class="batch-toolbar">
+        <div class="batch-info">
+          <el-icon :size="18"><Select /></el-icon>
+          <span>已选择 {{ selectedRows.length }} 条账单</span>
+        </div>
+        <div class="batch-actions">
+          <el-button type="primary" size="small" @click="showBatchPaymentChannel = true">
+            <el-icon><Wallet /></el-icon>
+            <span>支付渠道</span>
+          </el-button>
+          <el-button type="success" size="small" @click="showBatchCategory = true">
+            <el-icon><Folder /></el-icon>
+            <span>分类</span>
+          </el-button>
+          <el-button type="warning" size="small" @click="showBatchRemark = true">
+            <el-icon><Edit /></el-icon>
+            <span>备注</span>
+          </el-button>
+          <el-button type="info" size="small" @click="showBatchTag = true">
+            <el-icon><Collection /></el-icon>
+            <span>标签</span>
+          </el-button>
+          <el-button type="danger" size="small" @click="showBatchStatistics = true">
+            <el-icon><DataAnalysis /></el-icon>
+            <span>收支</span>
+          </el-button>
+        </div>
+      </div>
+
       <!-- 数据表格 -->
-      <el-table :data="tableData" stripe style="width: 100%">
+      <el-table 
+        :data="tableData" 
+        stripe 
+        style="width: 100%"
+        @selection-change="handleSelectionChange"
+      >
+        <el-table-column type="selection" width="55" />
         <!-- 交易日期 -->
         <el-table-column 
           v-if="selectedColumns.includes('transactionDate')"
@@ -265,11 +301,7 @@
           show-overflow-tooltip 
         >
           <template #default="{ row }">
-            <div v-if="row.paymentChannel" style="display: flex; align-items: center; gap: 6px;">
-              <span v-if="row.paymentChannelIcon" style="font-size: 18px;">{{ row.paymentChannelIcon }}</span>
-              <span>{{ row.paymentChannel }}</span>
-              <el-tag v-if="row.paymentChannelType" size="small">{{ getChannelTypeLabel(row.paymentChannelType) }}</el-tag>
-            </div>
+            <span v-if="row.paymentChannel">{{ row.paymentChannel }}</span>
             <span v-else style="color: #999;">-</span>
           </template>
         </el-table-column>
@@ -411,6 +443,175 @@
       </template>
     </el-dialog>
 
+    <!-- 批量修改支付渠道弹窗 -->
+    <el-dialog
+      v-model="showBatchPaymentChannel"
+      title="批量修改支付渠道"
+      width="500px"
+      @close="handleBatchDialogClose('paymentChannel')"
+    >
+      <el-form ref="batchFormRef" :model="batchForms.paymentChannel" label-width="100px">
+        <el-form-item label="支付渠道" required>
+          <el-select 
+            v-model="batchForms.paymentChannel.channel" 
+            placeholder="请选择支付渠道" 
+            filterable
+            clearable
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="channel in paymentChannelList"
+              :key="channel.id"
+              :label="channel.channelName"
+              :value="channel.channelName"
+            >
+              <span style="margin-right: 8px;">{{ channel.icon }}</span>
+              <span>{{ channel.channelName }}</span>
+              <el-tag v-if="channel.channelType" size="small" style="margin-left: 4px;">{{ getChannelTypeLabel(channel.channelType) }}</el-tag>
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showBatchPaymentChannel = false">取消</el-button>
+        <el-button type="primary" @click="handleBatchUpdate('paymentChannel')" :loading="batchSubmitting">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量修改分类弹窗 -->
+    <el-dialog
+      v-model="showBatchCategory"
+      title="批量修改分类"
+      width="500px"
+      @close="handleBatchDialogClose('category')"
+    >
+      <el-form ref="batchFormRef" :model="batchForms.category" label-width="100px">
+        <el-form-item label="分类" required>
+          <el-select 
+            v-model="batchForms.category.categoryId" 
+            placeholder="请选择分类" 
+            filterable
+            clearable
+            @change="handleBatchCategoryChange"
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="cat in categoryList"
+              :key="cat.id"
+              :label="cat.categoryName"
+              :value="cat.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="二级分类">
+          <el-select 
+            v-model="batchForms.category.subCategoryId" 
+            placeholder="请选择二级分类" 
+            filterable
+            clearable
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="subCat in batchSubCategoryList"
+              :key="subCat.id"
+              :label="subCat.categoryName"
+              :value="subCat.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showBatchCategory = false">取消</el-button>
+        <el-button type="primary" @click="handleBatchUpdate('category')" :loading="batchSubmitting">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量修改备注弹窗 -->
+    <el-dialog
+      v-model="showBatchRemark"
+      title="批量修改备注"
+      width="500px"
+      @close="handleBatchDialogClose('remark')"
+    >
+      <el-form ref="batchFormRef" :model="batchForms.remark" label-width="100px">
+        <el-form-item label="备注内容">
+          <el-input 
+            v-model="batchForms.remark.manualRemark" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入备注内容"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showBatchRemark = false">取消</el-button>
+        <el-button type="primary" @click="handleBatchUpdate('remark')" :loading="batchSubmitting">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量修改标签弹窗 -->
+    <el-dialog
+      v-model="showBatchTag"
+      title="批量修改标签"
+      width="500px"
+      @close="handleBatchDialogClose('tag')"
+    >
+      <el-form ref="batchFormRef" :model="batchForms.tag" label-width="100px">
+        <el-form-item label="标签">
+          <el-select 
+            v-model="batchForms.tag.tagIds" 
+            placeholder="请选择标签" 
+            multiple 
+            filterable
+            clearable
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="tag in getEnabledTagList"
+              :key="tag.id"
+              :label="tag.tagName"
+              :value="tag.id"
+            >
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span 
+                  class="color-dot" 
+                  :style="{ backgroundColor: tag.tagColor }"
+                  style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
+                ></span>
+                <span>{{ tag.tagName }}</span>
+                <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showBatchTag = false">取消</el-button>
+        <el-button type="primary" @click="handleBatchUpdate('tag')" :loading="batchSubmitting">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量修改统计弹窗 -->
+    <el-dialog
+      v-model="showBatchStatistics"
+      title="批量修改是否计入收支"
+      width="500px"
+      @close="handleBatchDialogClose('statistics')"
+    >
+      <el-form ref="batchFormRef" :model="batchForms.statistics" label-width="100px">
+        <el-form-item label="计入收支" required>
+          <el-radio-group v-model="batchForms.statistics.includeInStatistics">
+            <el-radio label="1">是</el-radio>
+            <el-radio label="0">否</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showBatchStatistics = false">取消</el-button>
+        <el-button type="primary" @click="handleBatchUpdate('statistics')" :loading="batchSubmitting">确定</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 新增/编辑弹窗 -->
     <el-dialog
       v-model="dialogVisible"
@@ -491,6 +692,7 @@
             clearable
             :disabled="isViewMode"
             style="width: 100%;"
+            @change="handlePaymentChannelChange"
           >
             <el-option
               v-for="channel in paymentChannelList"
@@ -574,8 +776,8 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Setting } from '@element-plus/icons-vue'
-import { pageBills, getStatistics, createBill, updateBill, deleteBill } from '@/api/bill'
+import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete } from '@element-plus/icons-vue'
+import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills } from '@/api/bill'
 import { getTagList } from '@/api/tag'
 import { getCategoryList } from '@/api/category'
 import { listPaymentChannels } from '@/api/paymentChannel'
@@ -763,6 +965,20 @@ const handleFormCategoryChange = (categoryId) => {
   form.subCategoryId = null  // 清空二级分类选择
 }
 
+// 支付渠道变化处理（表单）
+const handlePaymentChannelChange = (channelName) => {
+  if (!channelName) {
+    // 清空时，同时清空 ID
+    form.paymentChannelId = null
+  } else {
+    // 根据名称查找对应的 ID
+    const channel = paymentChannelList.value.find(c => c.channelName === channelName)
+    if (channel) {
+      form.paymentChannelId = channel.id
+    }
+  }
+}
+
 // 根据标签 ID 获取标签名称
 const getTagName = (tagId) => {
   const tag = tagList.value.find(t => t.id === tagId)
@@ -804,7 +1020,8 @@ const form = reactive({
   subCategoryId: null,  // 二级分类 ID
   transactionDate: '',
   transactionTime: '',
-  paymentChannel: '',
+  paymentChannel: '',  // 支付渠道名称
+  paymentChannelId: null,  // 支付渠道 ID
   transactionDesc: '',
   manualRemark: '',
   includeInStatistics: '1',
@@ -1019,6 +1236,7 @@ const handleEdit = (row) => {
     transactionDate: row.transactionDate,
     transactionTime: row.transactionTime,
     paymentChannel: row.paymentChannel,
+    paymentChannelId: row.paymentChannelId || null,  // 新增：支付渠道 ID
     transactionDesc: row.transactionDesc,
     manualRemark: row.manualRemark,
     includeInStatistics: row.includeInStatistics,
@@ -1042,27 +1260,13 @@ const handleView = (row) => {
     transactionDate: row.transactionDate,
     transactionTime: row.transactionTime,
     paymentChannel: row.paymentChannel,
+    paymentChannelId: row.paymentChannelId || null,  // 新增：支付渠道 ID
     transactionDesc: row.transactionDesc,
     manualRemark: row.manualRemark,
     includeInStatistics: row.includeInStatistics,
     manualEntry: row.manualEntry,
     tagIds: row.tagIds || []  // 加载标签 ID
   })
-}
-
-// 删除
-const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定删除该账单吗？', '提示', { type: 'warning' })
-    await deleteBill(row.id)
-    ElMessage.success('删除成功')
-    loadData()
-    loadStatistics()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
-  }
 }
 
 // 提交
@@ -1102,6 +1306,7 @@ const handleSubmit = async () => {
       subCategoryId: form.subCategoryId,
       subCategory: subCategoryName,  // 同时传递二级分类名称
       paymentChannel: form.paymentChannel,
+      paymentChannelId: form.paymentChannelId,  // 新增：支付渠道 ID
       transactionDesc: form.transactionDesc,
       manualRemark: form.manualRemark,
       includeInStatistics: form.includeInStatistics,
@@ -1139,6 +1344,180 @@ const handleDialogClose = () => {
   formRef.value?.resetFields()
   isViewMode.value = false // 重置查看模式
   isEditMode.value = false // 重置编辑模式
+}
+
+// ========== 批量操作相关 ==========
+
+// 选中的行
+const selectedRows = ref([])
+
+// 批量操作弹窗显示控制
+const showBatchPaymentChannel = ref(false)
+const showBatchCategory = ref(false)
+const showBatchRemark = ref(false)
+const showBatchTag = ref(false)
+const showBatchStatistics = ref(false)
+
+// 批量提交状态
+const batchSubmitting = ref(false)
+
+// 批量表单数据
+const batchForms = reactive({
+  paymentChannel: {
+    channel: ''
+  },
+  category: {
+    categoryId: null,
+    subCategoryId: null
+  },
+  remark: {
+    manualRemark: ''
+  },
+  tag: {
+    tagIds: []
+  },
+  statistics: {
+    includeInStatistics: '1'
+  }
+})
+
+// 批量表单引用
+const batchFormRef = ref()
+
+// 批量分类变化时的二级分类列表
+const batchSelectedCategoryId = ref(null)
+
+// 批量表单中的二级分类列表
+const batchSubCategoryList = computed(() => {
+  if (!batchSelectedCategoryId.value) {
+    return []
+  }
+  const parent = categoryList.value.find(cat => cat.id === batchSelectedCategoryId.value)
+  return parent && parent.children ? parent.children : []
+})
+
+// 选择变化处理
+const handleSelectionChange = (selection) => {
+  selectedRows.value = selection.map(row => row.id)
+}
+
+// 批量分类变化处理
+const handleBatchCategoryChange = (categoryId) => {
+  batchSelectedCategoryId.value = categoryId
+  batchForms.category.subCategoryId = null  // 清空二级分类选择
+}
+
+// 批量对话框关闭
+const handleBatchDialogClose = (type) => {
+  if (batchFormRef.value) {
+    batchFormRef.value.resetFields()
+  }
+  // 重置对应的表单数据
+  switch (type) {
+    case 'paymentChannel':
+      batchForms.paymentChannel.channel = ''
+      break
+    case 'category':
+      batchForms.category.categoryId = null
+      batchForms.category.subCategoryId = null
+      batchSelectedCategoryId.value = null
+      break
+    case 'remark':
+      batchForms.remark.manualRemark = ''
+      break
+    case 'tag':
+      batchForms.tag.tagIds = []
+      break
+    case 'statistics':
+      batchForms.statistics.includeInStatistics = '1'
+      break
+  }
+}
+
+// 批量更新
+const handleBatchUpdate = async (type) => {
+  try {
+    batchSubmitting.value = true
+    
+    // 构建批量更新数据
+    const data = {
+      billIds: selectedRows.value,
+      updateFields: []  // 明确指定要更新的字段
+    }
+    
+    // 根据类型设置不同的更新字段
+    switch (type) {
+      case 'paymentChannel':
+        if (!batchForms.paymentChannel.channel) {
+          ElMessage.warning('请选择支付渠道')
+          return
+        }
+        data.paymentChannel = batchForms.paymentChannel.channel
+        // 根据名称查找 ID
+        const channel = paymentChannelList.value.find(c => c.channelName === batchForms.paymentChannel.channel)
+        if (channel) {
+          data.paymentChannelId = channel.id
+        }
+        data.updateFields.push('paymentChannel')
+        break
+      case 'category':
+        if (!batchForms.category.categoryId) {
+          ElMessage.warning('请选择分类')
+          return
+        }
+        data.categoryId = batchForms.category.categoryId
+        data.subCategoryId = batchForms.category.subCategoryId
+        // 查找分类名称
+        const parent = categoryList.value.find(cat => cat.id === batchForms.category.categoryId)
+        if (parent) {
+          data.category = parent.categoryName
+        }
+        if (batchForms.category.subCategoryId) {
+          const subCat = batchSubCategoryList.value.find(sub => sub.id === batchForms.category.subCategoryId)
+          if (subCat) {
+            data.subCategory = subCat.categoryName
+          }
+        }
+        data.updateFields.push('categoryId')
+        break
+      case 'remark':
+        data.manualRemark = batchForms.remark.manualRemark
+        data.updateFields.push('manualRemark')
+        break
+      case 'tag':
+        data.tagIds = batchForms.tag.tagIds
+        data.updateFields.push('tagIds')
+        break
+      case 'statistics':
+        data.includeInStatistics = batchForms.statistics.includeInStatistics
+        data.updateFields.push('includeInStatistics')
+        break
+    }
+    
+    console.log('批量更新数据:', data)
+    
+    // 调用批量更新接口
+    await batchUpdateBills(data)
+    
+    ElMessage.success('批量更新成功')
+    
+    // 关闭弹窗
+    handleBatchDialogClose(type)
+    if (type === 'paymentChannel') showBatchPaymentChannel.value = false
+    else if (type === 'category') showBatchCategory.value = false
+    else if (type === 'remark') showBatchRemark.value = false
+    else if (type === 'tag') showBatchTag.value = false
+    else if (type === 'statistics') showBatchStatistics.value = false
+    
+    // 重新加载数据
+    loadData()
+    loadStatistics()
+  } catch (error) {
+    console.error('批量更新失败:', error)
+    ElMessage.error(error.message || '批量更新失败')
+  } finally {
+    batchSubmitting.value = false
+  }
 }
 
 onMounted(() => {
@@ -1287,5 +1666,46 @@ onMounted(() => {
 .el-pagination {
   margin-top: 20px;
   justify-content: flex-end;
+}
+
+/* 批量操作工具栏 */
+.batch-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(to right, #f5f7fa, #fafcff);
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.batch-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.batch-info .el-icon {
+  font-size: 18px;
+  color: #409eff;
+}
+
+.batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.batch-actions .el-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 100px;
 }
 </style>

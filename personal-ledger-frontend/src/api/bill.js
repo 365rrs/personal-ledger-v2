@@ -53,3 +53,12 @@ export function getStatistics(data) {
     data
   })
 }
+
+// 批量更新账单
+export function batchUpdateBills(data) {
+  return request({
+    url: '/bill/batchUpdate',
+    method: 'post',
+    data
+  })
+}

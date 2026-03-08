@@ -29,6 +29,10 @@ public class BillVO {
      */
     private String paymentChannel;
     /**
+     * 支付渠道 ID
+     */
+    private Long paymentChannelId;
+    /**
      * 支付渠道类型（用于前端展示图标）
      */
     private String paymentChannelType;

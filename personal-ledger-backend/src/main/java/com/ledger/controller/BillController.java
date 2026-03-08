@@ -2,6 +2,7 @@ package com.ledger.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ledger.common.Response;
+import com.ledger.dto.BillBatchUpdateDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.service.BillService;
@@ -69,5 +70,12 @@ public class BillController {
     public Response<BillStatisticsVO> getStatistics(@RequestBody BillQueryDTO dto) {
         BillStatisticsVO statistics = billService.getStatistics(dto);
         return Response.success(statistics);
+    }
+    
+    @Operation(summary = "批量更新账单")
+    @PostMapping("/batchUpdate")
+    public Response<Void> batchUpdate(@Validated @RequestBody BillBatchUpdateDTO dto) {
+        billService.batchUpdate(dto);
+        return Response.success();
     }
 }

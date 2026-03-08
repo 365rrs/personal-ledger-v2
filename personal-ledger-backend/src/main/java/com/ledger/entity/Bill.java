@@ -74,6 +74,12 @@ public class Bill extends BaseEntity {
     private String paymentChannel;
 
     /**
+     * 支付渠道 ID
+     */
+    @TableField(value = "payment_channel_id")
+    private Long paymentChannelId;
+
+    /**
      * 分类名称（兼容旧版本）
      */
     @TableField(value = "category")

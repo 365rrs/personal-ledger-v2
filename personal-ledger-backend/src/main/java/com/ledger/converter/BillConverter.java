@@ -41,6 +41,7 @@ public class BillConverter {
             if (channel != null) {
                 vo.setPaymentChannelType(channel.getChannelType());
                 vo.setPaymentChannelIcon(channel.getIcon());
+                vo.setPaymentChannelId(channel.getId());  // 填充支付渠道 ID
             }
         }
         
