@@ -17,7 +17,7 @@ import lombok.EqualsAndHashCode;
 public class BillDataCleanRule extends BaseEntity {
     
     /**
-     * 规则类型：PAYMENT_CHANNEL-支付渠道，CATEGORY-分类，TRANSACTION_DESC-备注
+     * 规则类型：PAYMENT_CHANNEL-支付渠道，CATEGORY-分类，MANUAL_REMARK-手工备注
      */
     private String ruleType;
     

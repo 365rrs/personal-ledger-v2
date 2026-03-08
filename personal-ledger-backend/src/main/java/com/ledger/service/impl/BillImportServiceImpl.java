@@ -658,16 +658,7 @@ public class BillImportServiceImpl implements BillImportService {
         bill.setTransactionType(detail.getTransactionType());
 
         // 应用数据清洗规则
-        Map<String, String> billFields = new HashMap<>();
-        billFields.put("transaction_type", bill.getAmountType());
-
-        // 清洗分类（必填）
-        String category = billDataCleanService.cleanField("CATEGORY", billFields);
-        if (category == null) {
-            // 如果没有匹配到规则，使用默认分类
-            category = "INCOME".equals(bill.getAmountType()) ? "其他收入" : "其他支出";
-        }
-        bill.setCategory(category);
+        billDataCleanService.cleanBill(bill);
 
         // 交易描述
         bill.setTransactionDesc(detail.getDescription());

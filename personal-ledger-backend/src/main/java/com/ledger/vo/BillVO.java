@@ -62,4 +62,21 @@ public class BillVO {
     private java.util.List<Long> tagIds;  // 标签 ID 列表
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    
+    // ============ 以下字段用于清洗测试对比 ============
+    
+    /**
+     * 原始分类（清洗前）
+     */
+    private String originalCategory;
+    
+    /**
+     * 原始支付渠道（清洗前）
+     */
+    private String originalPaymentChannel;
+    
+    /**
+     * 原始用户备注（清洗前）
+     */
+    private String originalManualRemark;
 }

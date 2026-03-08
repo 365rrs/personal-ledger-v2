@@ -33,6 +33,10 @@
           <el-icon><Wallet /></el-icon>
           <span>支付渠道</span>
         </el-menu-item>
+        <el-menu-item index="/data-clean-rule">
+          <el-icon><Setting /></el-icon>
+          <span>清洗规则</span>
+        </el-menu-item>
         <el-menu-item index="/statistics">
           <el-icon><DataAnalysis /></el-icon>
           <span>统计分析</span>
@@ -54,7 +58,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Tickets, Menu, DataAnalysis, Upload, PriceTag, Wallet } from '@element-plus/icons-vue'
+import { HomeFilled, Tickets, Menu, DataAnalysis, Upload, PriceTag, Wallet, Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -68,6 +72,7 @@ const pageTitle = computed(() => {
     '/category': '分类管理',
     '/tag': '标签管理',
     '/payment-channel': '支付渠道',
+    '/data-clean-rule': '清洗规则',
     '/statistics': '统计分析'
   }
   return titles[route.path] || '个人账本系统'

@@ -46,6 +46,11 @@ const routes = [
         path: 'payment-channel',
         name: 'PaymentChannel',
         component: () => import('../views/PaymentChannel.vue')
+      },
+      {
+        path: 'data-clean-rule',
+        name: 'DataCleanRule',
+        component: () => import('../views/DataCleanRule.vue')
       }
     ]
   }
