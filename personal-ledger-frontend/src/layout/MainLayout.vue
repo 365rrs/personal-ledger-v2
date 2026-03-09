@@ -53,6 +53,10 @@
           <el-icon><PieChart /></el-icon>
           <span>分类统计</span>
         </el-menu-item>
+        <el-menu-item index="/large-expense">
+          <el-icon><Warning /></el-icon>
+          <span>大额支出</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
@@ -70,7 +74,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Tickets, Menu, DataAnalysis, Upload, PriceTag, Wallet, Setting, TrendCharts, DataLine, PieChart } from '@element-plus/icons-vue'
+import { HomeFilled, Tickets, Menu, DataAnalysis, Upload, PriceTag, Wallet, Setting, TrendCharts, DataLine, PieChart, Warning } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -88,7 +92,8 @@ const pageTitle = computed(() => {
     '/statistics': '统计分析',
     '/daily-expense': '每日支出',
     '/cumulative-expense': '累计支出',
-    '/category-statistics': '分类统计'
+    '/category-statistics': '分类统计',
+    '/large-expense': '大额支出'
   }
   return titles[route.path] || '个人账本系统'
 })

@@ -66,6 +66,11 @@ const routes = [
         path: 'category-statistics',
         name: 'CategoryStatistics',
         component: () => import('../views/CategoryStatistics.vue')
+      },
+      {
+        path: 'large-expense',
+        name: 'LargeExpense',
+        component: () => import('../views/LargeExpense.vue')
       }
     ]
   }
