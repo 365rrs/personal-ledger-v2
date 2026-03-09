@@ -2,9 +2,11 @@ package com.ledger.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ledger.dto.BillBatchUpdateDTO;
+import com.ledger.dto.BillCumulativeExpenseQueryDTO;
 import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
+import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
@@ -58,4 +60,9 @@ public interface BillService {
      * 查询每日支出
      */
     List<BillDailyExpenseVO> getDailyExpense(BillDailyExpenseQueryDTO dto);
+    
+    /**
+     * 查询累计支出
+     */
+    List<BillCumulativeExpenseVO> getCumulativeExpense(BillCumulativeExpenseQueryDTO dto);
 }

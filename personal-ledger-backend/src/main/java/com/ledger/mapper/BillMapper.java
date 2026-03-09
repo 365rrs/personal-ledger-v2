@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.entity.Bill;
+import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
 import org.apache.ibatis.annotations.Mapper;
@@ -53,4 +54,13 @@ public interface BillMapper extends BaseMapper<Bill> {
      * @return 每日支出列表
      */
     List<BillDailyExpenseVO> selectDailyExpense(@Param("year") Integer year, @Param("month") Integer month);
+
+    /**
+     * 查询累计支出
+     *
+     * @param year  年份
+     * @param month 月份
+     * @return 累计支出列表
+     */
+    List<BillCumulativeExpenseVO> selectCumulativeExpense(@Param("year") Integer year, @Param("month") Integer month);
 }

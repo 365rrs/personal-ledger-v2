@@ -45,6 +45,10 @@
           <el-icon><TrendCharts /></el-icon>
           <span>每日支出</span>
         </el-menu-item>
+        <el-menu-item index="/cumulative-expense">
+          <el-icon><DataLine /></el-icon>
+          <span>累计支出</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
@@ -62,7 +66,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Tickets, Menu, DataAnalysis, Upload, PriceTag, Wallet, Setting, TrendCharts } from '@element-plus/icons-vue'
+import { HomeFilled, Tickets, Menu, DataAnalysis, Upload, PriceTag, Wallet, Setting, TrendCharts, DataLine } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -78,7 +82,8 @@ const pageTitle = computed(() => {
     '/payment-channel': '支付渠道',
     '/data-clean-rule': '清洗规则',
     '/statistics': '统计分析',
-    '/daily-expense': '每日支出'
+    '/daily-expense': '每日支出',
+    '/cumulative-expense': '累计支出'
   }
   return titles[route.path] || '个人账本系统'
 })

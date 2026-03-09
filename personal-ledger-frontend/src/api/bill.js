@@ -71,3 +71,12 @@ export function getDailyExpense(data) {
     data
   })
 }
+
+// 查询累计支出
+export function getCumulativeExpense(data) {
+  return request({
+    url: '/bill/cumulativeExpense',
+    method: 'post',
+    data
+  })
+}

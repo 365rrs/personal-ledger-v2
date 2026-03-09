@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.converter.BillConverter;
 import com.ledger.dto.BillBatchUpdateDTO;
+import com.ledger.dto.BillCumulativeExpenseQueryDTO;
 import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
@@ -16,6 +17,7 @@ import com.ledger.mapper.BillMapper;
 import com.ledger.mapper.BillTagRelationMapper;
 import com.ledger.service.BillService;
 import com.ledger.util.DataHashUtil;
+import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
@@ -316,5 +318,16 @@ public class BillServiceImpl implements BillService {
         }
         
         return billMapper.selectDailyExpense(yearMonth.getYear(), yearMonth.getMonthValue());
+    }
+
+    @Override
+    public List<BillCumulativeExpenseVO> getCumulativeExpense(BillCumulativeExpenseQueryDTO dto) {
+        // 默认查询当前月份
+        YearMonth yearMonth = YearMonth.now();
+        if (dto.getYear() != null && dto.getMonth() != null) {
+            yearMonth = YearMonth.of(dto.getYear(), dto.getMonth());
+        }
+        
+        return billMapper.selectCumulativeExpense(yearMonth.getYear(), yearMonth.getMonthValue());
     }
 }

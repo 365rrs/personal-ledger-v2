@@ -56,6 +56,11 @@ const routes = [
         path: 'daily-expense',
         name: 'DailyExpense',
         component: () => import('../views/DailyExpense.vue')
+      },
+      {
+        path: 'cumulative-expense',
+        name: 'CumulativeExpense',
+        component: () => import('../views/CumulativeExpense.vue')
       }
     ]
   }
