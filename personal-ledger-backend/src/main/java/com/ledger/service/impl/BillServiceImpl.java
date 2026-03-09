@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.converter.BillConverter;
 import com.ledger.dto.BillBatchUpdateDTO;
+import com.ledger.dto.BillCategoryStatisticsQueryDTO;
 import com.ledger.dto.BillCumulativeExpenseQueryDTO;
 import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
@@ -17,6 +18,7 @@ import com.ledger.mapper.BillMapper;
 import com.ledger.mapper.BillTagRelationMapper;
 import com.ledger.service.BillService;
 import com.ledger.util.DataHashUtil;
+import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.Collections;
@@ -329,5 +332,35 @@ public class BillServiceImpl implements BillService {
         }
         
         return billMapper.selectCumulativeExpense(yearMonth.getYear(), yearMonth.getMonthValue());
+    }
+
+    @Override
+    public List<BillCategoryStatisticsVO> getCategoryStatistics(BillCategoryStatisticsQueryDTO dto) {
+        // 默认查询当前年份
+        Integer year = dto.getYear() != null ? dto.getYear() : java.time.Year.now().getValue();
+        
+        List<BillCategoryStatisticsVO> list = billMapper.selectCategoryStatistics(
+            year, 
+            dto.getMonth(), 
+            dto.getAmountType()
+        );
+        
+        // 计算占比
+        if (list != null && !list.isEmpty()) {
+            BigDecimal total = list.stream()
+                .map(BillCategoryStatisticsVO::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            if (total.compareTo(BigDecimal.ZERO) > 0) {
+                list.forEach(item -> {
+                    BigDecimal percentage = item.getAmount()
+                        .divide(total, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"));
+                    item.setPercentage(percentage);
+                });
+            }
+        }
+        
+        return list;
     }
 }

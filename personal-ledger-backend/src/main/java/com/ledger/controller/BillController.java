@@ -3,11 +3,13 @@ package com.ledger.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ledger.common.Response;
 import com.ledger.dto.BillBatchUpdateDTO;
+import com.ledger.dto.BillCategoryStatisticsQueryDTO;
 import com.ledger.dto.BillCumulativeExpenseQueryDTO;
 import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.service.BillService;
+import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
@@ -95,6 +97,13 @@ public class BillController {
     @PostMapping("/cumulativeExpense")
     public Response<List<BillCumulativeExpenseVO>> getCumulativeExpense(@RequestBody BillCumulativeExpenseQueryDTO dto) {
         List<BillCumulativeExpenseVO> list = billService.getCumulativeExpense(dto);
+        return Response.success(list);
+    }
+    
+    @Operation(summary = "按分类统计")
+    @PostMapping("/categoryStatistics")
+    public Response<List<BillCategoryStatisticsVO>> getCategoryStatistics(@RequestBody BillCategoryStatisticsQueryDTO dto) {
+        List<BillCategoryStatisticsVO> list = billService.getCategoryStatistics(dto);
         return Response.success(list);
     }
 }

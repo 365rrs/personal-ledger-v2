@@ -200,4 +200,31 @@
         ORDER BY transaction_date ASC
     </select>
 
+    <!-- 按分类统计 -->
+    <select id="selectCategoryStatistics" resultType="com.ledger.vo.BillCategoryStatisticsVO">
+        SELECT
+            category,
+            SUM(amount) AS amount,
+            COUNT(*) AS count
+        FROM (
+            SELECT
+                COALESCE(category, '未分类') AS category,
+                CASE
+                    WHEN amount_type = 'INCOME' THEN income_amount
+                    WHEN amount_type = 'EXPENSE' THEN expense_amount
+                    ELSE 0
+                END AS amount
+            FROM bill
+            WHERE deleted = '0'
+              AND include_in_statistics = '1'
+              AND amount_type = #{amountType}
+              AND YEAR(transaction_date) = #{year}
+              <if test="month != null">
+                  AND MONTH(transaction_date) = #{month}
+              </if>
+        ) AS data
+        GROUP BY category
+        ORDER BY amount DESC
+    </select>
+
 </mapper>

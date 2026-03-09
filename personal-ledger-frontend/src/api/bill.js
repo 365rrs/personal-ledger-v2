@@ -80,3 +80,12 @@ export function getCumulativeExpense(data) {
     data
   })
 }
+
+// 按分类统计
+export function getCategoryStatistics(data) {
+  return request({
+    url: '/bill/categoryStatistics',
+    method: 'post',
+    data
+  })
+}

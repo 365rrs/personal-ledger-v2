@@ -61,6 +61,11 @@ const routes = [
         path: 'cumulative-expense',
         name: 'CumulativeExpense',
         component: () => import('../views/CumulativeExpense.vue')
+      },
+      {
+        path: 'category-statistics',
+        name: 'CategoryStatistics',
+        component: () => import('../views/CategoryStatistics.vue')
       }
     ]
   }
