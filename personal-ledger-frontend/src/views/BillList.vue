@@ -236,8 +236,8 @@
       <!-- 数据表格 -->
       <el-table 
         :data="tableData" 
-        stripe 
         style="width: 100%"
+        class="bill-table"
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
@@ -261,7 +261,7 @@
         <el-table-column 
           v-if="selectedColumns.includes('incomeAmount')"
           label="收入" 
-          width="60"
+          width="80"
           align="right"
         >
           <template #default="{ row }">
@@ -275,7 +275,7 @@
         <el-table-column 
           v-if="selectedColumns.includes('expenseAmount')"
           label="支出" 
-          width="60"
+          width="80"
           align="right"
         >
           <template #default="{ row }">

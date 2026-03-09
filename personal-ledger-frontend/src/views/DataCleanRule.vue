@@ -42,7 +42,6 @@
       <div class="table-area">
         <el-table 
           :data="tableData" 
-          stripe 
           style="width: 100%"
           v-loading="loading"
         >

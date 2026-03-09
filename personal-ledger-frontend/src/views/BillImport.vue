@@ -17,7 +17,7 @@
       </template>
 
       <!-- 数据表格 -->
-      <el-table :data="tableData" stripe style="width: 100%">
+      <el-table :data="tableData" style="width: 100%">
         <el-table-column prop="fileName" label="文件名" width="400" show-overflow-tooltip />
 
         <el-table-column prop="createTime" label="导入时间" width="180" />

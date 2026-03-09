@@ -39,7 +39,6 @@
         <el-table 
           ref="tableRef"
           :data="tableData" 
-          stripe 
           style="width: 100%"
           v-loading="loading"
           row-key="id"
