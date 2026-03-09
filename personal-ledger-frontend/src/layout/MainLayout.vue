@@ -13,50 +13,37 @@
           <el-icon><HomeFilled /></el-icon>
           <span>首页</span>
         </el-menu-item>
-        <el-menu-item index="/bill">
-          <el-icon><Tickets /></el-icon>
-          <span>账单列表</span>
-        </el-menu-item>
-        <el-menu-item index="/bill-import">
-          <el-icon><Upload /></el-icon>
-          <span>账单导入</span>
-        </el-menu-item>
-        <el-menu-item index="/category">
-          <el-icon><Menu /></el-icon>
-          <span>分类管理</span>
-        </el-menu-item>
-        <el-menu-item index="/tag">
-          <el-icon><PriceTag /></el-icon>
-          <span>标签管理</span>
-        </el-menu-item>
-        <el-menu-item index="/payment-channel">
-          <el-icon><Wallet /></el-icon>
-          <span>支付渠道</span>
-        </el-menu-item>
-        <el-menu-item index="/data-clean-rule">
-          <el-icon><Setting /></el-icon>
-          <span>清洗规则</span>
-        </el-menu-item>
-        <el-menu-item index="/statistics">
-          <el-icon><DataAnalysis /></el-icon>
-          <span>统计分析</span>
-        </el-menu-item>
-        <el-menu-item index="/daily-expense">
-          <el-icon><TrendCharts /></el-icon>
-          <span>每日支出</span>
-        </el-menu-item>
-        <el-menu-item index="/cumulative-expense">
-          <el-icon><DataLine /></el-icon>
-          <span>累计支出</span>
-        </el-menu-item>
-        <el-menu-item index="/category-statistics">
-          <el-icon><PieChart /></el-icon>
-          <span>分类统计</span>
-        </el-menu-item>
-        <el-menu-item index="/large-expense">
-          <el-icon><Warning /></el-icon>
-          <span>大额支出</span>
-        </el-menu-item>
+        
+        <el-sub-menu index="bill">
+          <template #title>
+            <el-icon><Tickets /></el-icon>
+            <span>账单管理</span>
+          </template>
+          <el-menu-item index="/bill">账单列表</el-menu-item>
+          <el-menu-item index="/bill-import">账单导入</el-menu-item>
+        </el-sub-menu>
+        
+        <el-sub-menu index="statistics">
+          <template #title>
+            <el-icon><DataAnalysis /></el-icon>
+            <span>统计分析</span>
+          </template>
+          <el-menu-item index="/daily-expense">每日支出</el-menu-item>
+          <el-menu-item index="/cumulative-expense">累计支出</el-menu-item>
+          <el-menu-item index="/category-statistics">分类统计</el-menu-item>
+          <el-menu-item index="/large-expense">大额支出</el-menu-item>
+        </el-sub-menu>
+        
+        <el-sub-menu index="settings">
+          <template #title>
+            <el-icon><Setting /></el-icon>
+            <span>系统设置</span>
+          </template>
+          <el-menu-item index="/category">分类管理</el-menu-item>
+          <el-menu-item index="/tag">标签管理</el-menu-item>
+          <el-menu-item index="/payment-channel">支付渠道</el-menu-item>
+          <el-menu-item index="/data-clean-rule">清洗规则</el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
     
@@ -74,7 +61,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Tickets, Menu, DataAnalysis, Upload, PriceTag, Wallet, Setting, TrendCharts, DataLine, PieChart, Warning } from '@element-plus/icons-vue'
+import { HomeFilled, Tickets, DataAnalysis, Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -89,7 +76,6 @@ const pageTitle = computed(() => {
     '/tag': '标签管理',
     '/payment-channel': '支付渠道',
     '/data-clean-rule': '清洗规则',
-    '/statistics': '统计分析',
     '/daily-expense': '每日支出',
     '/cumulative-expense': '累计支出',
     '/category-statistics': '分类统计',
