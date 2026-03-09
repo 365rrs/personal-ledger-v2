@@ -4,9 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.converter.BillConverter;
+import com.ledger.dto.BillBatchUpdateDTO;
+import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
-import com.ledger.dto.BillBatchUpdateDTO;
 import com.ledger.entity.Bill;
 import com.ledger.entity.BillTagRelation;
 import com.ledger.enums.IncludeInStatisticsEnum;
@@ -15,6 +16,7 @@ import com.ledger.mapper.BillMapper;
 import com.ledger.mapper.BillTagRelationMapper;
 import com.ledger.service.BillService;
 import com.ledger.util.DataHashUtil;
+import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -302,5 +305,16 @@ public class BillServiceImpl implements BillService {
             log.error("更新标签关联关系失败，billId={}", billId, e);
             throw new BusinessException("更新标签失败：" + e.getMessage());
         }
+    }
+
+    @Override
+    public List<BillDailyExpenseVO> getDailyExpense(BillDailyExpenseQueryDTO dto) {
+        // 默认查询当前月份
+        YearMonth yearMonth = YearMonth.now();
+        if (dto.getYear() != null && dto.getMonth() != null) {
+            yearMonth = YearMonth.of(dto.getYear(), dto.getMonth());
+        }
+        
+        return billMapper.selectDailyExpense(yearMonth.getYear(), yearMonth.getMonthValue());
     }
 }

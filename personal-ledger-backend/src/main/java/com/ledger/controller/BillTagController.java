@@ -67,4 +67,10 @@ public class BillTagController {
         billTagService.updateSortOrder(id, sortOrder);
         return Response.success();
     }
+
+    @GetMapping("/list")
+    public Response<java.util.List<BillTagVO>> list() {
+        java.util.List<BillTagVO> list = billTagService.list();
+        return Response.success(list);
+    }
 }

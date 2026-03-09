@@ -5,9 +5,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.entity.Bill;
+import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * 账单Mapper
@@ -41,4 +44,13 @@ public interface BillMapper extends BaseMapper<Bill> {
      * @return 影响行数
      */
     int updateBill(Bill bill);
+
+    /**
+     * 查询每日支出
+     *
+     * @param year  年份
+     * @param month 月份
+     * @return 每日支出列表
+     */
+    List<BillDailyExpenseVO> selectDailyExpense(@Param("year") Integer year, @Param("month") Integer month);
 }

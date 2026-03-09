@@ -75,3 +75,13 @@ export function updateTagSortOrder(id, sortOrder) {
     params: { id, sortOrder }
   })
 }
+
+/**
+ * 查询所有标签列表
+ */
+export function listTags() {
+  return request({
+    url: '/tag/list',
+    method: 'get'
+  })
+}

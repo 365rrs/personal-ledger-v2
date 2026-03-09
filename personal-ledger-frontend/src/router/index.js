@@ -51,6 +51,11 @@ const routes = [
         path: 'data-clean-rule',
         name: 'DataCleanRule',
         component: () => import('../views/DataCleanRule.vue')
+      },
+      {
+        path: 'daily-expense',
+        name: 'DailyExpense',
+        component: () => import('../views/DailyExpense.vue')
       }
     ]
   }

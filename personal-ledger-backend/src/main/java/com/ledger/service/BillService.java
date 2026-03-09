@@ -2,10 +2,14 @@ package com.ledger.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ledger.dto.BillBatchUpdateDTO;
+import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
+import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
+
+import java.util.List;
 
 /**
  * 账单Service
@@ -49,4 +53,9 @@ public interface BillService {
      * 批量更新账单
      */
     void batchUpdate(BillBatchUpdateDTO dto);
+    
+    /**
+     * 查询每日支出
+     */
+    List<BillDailyExpenseVO> getDailyExpense(BillDailyExpenseQueryDTO dto);
 }

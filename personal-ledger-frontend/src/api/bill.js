@@ -62,3 +62,12 @@ export function batchUpdateBills(data) {
     data
   })
 }
+
+// 查询每日支出
+export function getDailyExpense(data) {
+  return request({
+    url: '/bill/dailyExpense',
+    method: 'post',
+    data
+  })
+}

@@ -3,9 +3,11 @@ package com.ledger.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ledger.common.Response;
 import com.ledger.dto.BillBatchUpdateDTO;
+import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.service.BillService;
+import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * 账单控制器
@@ -77,5 +80,12 @@ public class BillController {
     public Response<Void> batchUpdate(@Validated @RequestBody BillBatchUpdateDTO dto) {
         billService.batchUpdate(dto);
         return Response.success();
+    }
+    
+    @Operation(summary = "查询每日支出")
+    @PostMapping("/dailyExpense")
+    public Response<List<BillDailyExpenseVO>> getDailyExpense(@RequestBody BillDailyExpenseQueryDTO dto) {
+        List<BillDailyExpenseVO> list = billService.getDailyExpense(dto);
+        return Response.success(list);
     }
 }

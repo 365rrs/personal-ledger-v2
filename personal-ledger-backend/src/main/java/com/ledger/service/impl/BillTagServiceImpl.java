@@ -138,4 +138,14 @@ public class BillTagServiceImpl implements BillTagService {
         tag.setSortOrder(newSortOrder);
         billTagMapper.updateById(tag);
     }
+
+    @Override
+    public java.util.List<BillTagVO> list() {
+        LambdaQueryWrapper<BillTag> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(BillTag::getTagStatus, TagStatusEnum.ENABLE.getCode())
+               .orderByAsc(BillTag::getSortOrder);
+        
+        java.util.List<BillTag> tags = billTagMapper.selectList(wrapper);
+        return tags.stream().map(converter::toVO).collect(java.util.stream.Collectors.toList());
+    }
 }

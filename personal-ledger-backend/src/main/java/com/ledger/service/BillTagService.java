@@ -47,4 +47,9 @@ public interface BillTagService {
      * 更新标签排序序号
      */
     void updateSortOrder(Long id, Integer newSortOrder);
+    
+    /**
+     * 查询所有标签列表
+     */
+    java.util.List<BillTagVO> list();
 }
