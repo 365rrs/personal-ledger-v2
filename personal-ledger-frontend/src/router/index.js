@@ -5,7 +5,7 @@ const routes = [
   {
     path: '/',
     component: MainLayout,
-    redirect: '/dashboard',
+    redirect: '/bill',
     children: [
       {
         path: 'dashboard',

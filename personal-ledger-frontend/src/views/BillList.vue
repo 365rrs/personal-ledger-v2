@@ -28,6 +28,7 @@
             <el-radio-button label="上月" value="lastMonth" />
             <el-radio-button label="本年" value="year" />
             <el-radio-button label="去年" value="lastYear" />
+            <el-radio-button label="自定义" value="custom" />
           </el-radio-group>
         </div>
         
@@ -1100,6 +1101,7 @@ const handleDateChange = (val) => {
   if (val) {
     queryForm.startDate = val[0]
     queryForm.endDate = val[1]
+    quickDate.value = 'custom'  // 手动选择日期时，切换到自定义
   } else {
     queryForm.startDate = ''
     queryForm.endDate = ''
@@ -1108,11 +1110,13 @@ const handleDateChange = (val) => {
 
 // 快捷日期选择
 const handleQuickDateChange = (value) => {
-  if (!value) {
-    // 清空快捷日期时，同时清空日期范围
-    queryForm.startDate = ''
-    queryForm.endDate = ''
-    dateRange.value = []
+  if (!value || value === 'custom') {
+    // 清空快捷日期或选择自定义时，不修改日期范围
+    if (!value) {
+      queryForm.startDate = ''
+      queryForm.endDate = ''
+      dateRange.value = []
+    }
     return
   }
   
