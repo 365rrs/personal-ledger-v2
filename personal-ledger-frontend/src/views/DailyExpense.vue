@@ -61,14 +61,14 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="incomeAmount" label="收入金额" width="120">
+        <el-table-column prop="incomeAmount" label="收入金额" width="120" sortable :sort-method="(a, b) => (a.incomeAmount || 0) - (b.incomeAmount || 0)">
           <template #default="{ row }">
             <span v-if="row.incomeAmount" style="color: #67C23A">
               +{{ row.incomeAmount }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="expenseAmount" label="支出金额" width="120">
+        <el-table-column prop="expenseAmount" label="支出金额" width="120" sortable :sort-method="(a, b) => (a.expenseAmount || 0) - (b.expenseAmount || 0)">
           <template #default="{ row }">
             <span v-if="row.expenseAmount" style="color: #F56C6C">
               -{{ row.expenseAmount }}

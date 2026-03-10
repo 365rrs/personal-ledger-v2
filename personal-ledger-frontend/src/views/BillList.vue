@@ -74,7 +74,12 @@
               :key="cat.id"
               :label="cat.categoryName"
               :value="cat.id"
-            />
+            >
+              <span>{{ cat.categoryName }}</span>
+              <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'danger' : 'success'" style="margin-left: 8px;">
+                {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
+              </el-tag>
+            </el-option>
           </el-select>
           
           <span style="margin-right: 12px;">二级分类：</span>
@@ -213,6 +218,10 @@
           <span>已选择 {{ selectedRows.length }} 条账单</span>
         </div>
         <div class="batch-actions">
+          <el-button type="success" size="small" @click="handleQuickAdd" v-if="selectedRows.length === 1">
+            <el-icon><Plus /></el-icon>
+            <span>快速记一笔</span>
+          </el-button>
           <el-button type="primary" size="small" @click="showBatchPaymentChannel = true">
             <el-icon><Wallet /></el-icon>
             <span>支付渠道</span>
@@ -509,7 +518,12 @@
               :key="cat.id"
               :label="cat.categoryName"
               :value="cat.id"
-            />
+            >
+              <span>{{ cat.categoryName }}</span>
+              <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'danger' : 'success'" style="margin-left: 8px;">
+                {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
+              </el-tag>
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="二级分类">
@@ -680,7 +694,12 @@
               :key="cat.id"
               :label="cat.categoryName"
               :value="cat.id"
-            />
+            >
+              <span>{{ cat.categoryName }}</span>
+              <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'danger' : 'success'" style="margin-left: 8px;">
+                {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
+              </el-tag>
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="二级分类" prop="subCategoryId">
@@ -812,7 +831,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete, RefreshRight } from '@element-plus/icons-vue'
+import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete, RefreshRight, Plus } from '@element-plus/icons-vue'
 import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills } from '@/api/bill'
 import { getTagList } from '@/api/tag'
 import { getCategoryList } from '@/api/category'
@@ -1234,13 +1253,44 @@ const handleReset = () => {
   quickDate.value = 'month' // 重置时恢复默认值为本月
   selectedCategoryId.value = null  // 清空选中的分类
   handleQuickDateChange('month') // 同时更新查询条件
-  showAdvancedSearch.value = false // 收起高级搜索
   handleQuery()
 }
 
 // 切换高级搜索显示/隐藏
 const toggleAdvancedSearch = () => {
   showAdvancedSearch.value = !showAdvancedSearch.value
+}
+
+// 快速记一笔（基于选中的账单）
+const handleQuickAdd = () => {
+  if (selectedRowsData.value.length !== 1) {
+    ElMessage.warning('请选择一条账单')
+    return
+  }
+  
+  const row = selectedRowsData.value[0]
+  dialogTitle.value = '快速记一笔（基于选中账单）'
+  isViewMode.value = false
+  isEditMode.value = false
+  dialogVisible.value = true
+  
+  // 复制选中账单的数据，但不包括 ID 和金额
+  Object.assign(form, {
+    id: null,  // 新增，不带 ID
+    amountType: row.amountType,
+    transactionType: row.transactionType,
+    amount: null,  // 金额留空，由用户手动输入
+    categoryId: row.categoryId,
+    subCategoryId: row.subCategoryId,
+    transactionDate: row.transactionDate,
+    transactionTime: row.transactionTime,
+    paymentChannel: row.paymentChannel,
+    paymentChannelId: row.paymentChannelId || null,
+    transactionDesc: row.transactionDesc,
+    manualRemark: `关联账单ID: ${row.id}`,  // 备注中填充关联账单ID
+    includeInStatistics: row.includeInStatistics,
+    tagIds: row.tagIds || []
+  })
 }
 
 // 新增
@@ -1396,6 +1446,7 @@ const handleDialogClose = () => {
 
 // 选中的行
 const selectedRows = ref([])
+const selectedRowsData = ref([])  // 保存完整的行数据
 
 // 批量操作弹窗显示控制
 const showBatchPaymentChannel = ref(false)
@@ -1446,6 +1497,7 @@ const batchSubCategoryList = computed(() => {
 // 选择变化处理
 const handleSelectionChange = (selection) => {
   selectedRows.value = selection.map(row => row.id)
+  selectedRowsData.value = selection  // 保存完整的行数据
 }
 
 // 批量分类变化处理
