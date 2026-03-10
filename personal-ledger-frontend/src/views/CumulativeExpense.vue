@@ -86,8 +86,16 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="100" align="center">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 编辑对话框 -->
+    <BillEditDialog v-model="showEditDialog" :bill-data="currentBill" @success="handleEditSuccess" />
   </div>
 </template>
 
@@ -97,6 +105,7 @@ import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getCumulativeExpense, pageBills } from '@/api/bill'
 import { listTags } from '@/api/tag'
+import BillEditDialog from '@/components/BillEditDialog.vue'
 
 const chartRef = ref(null)
 const chartInstance = ref(null)
@@ -107,6 +116,8 @@ const billLoading = ref(false)
 const billList = ref([])
 const selectedDate = ref('')
 const tagList = ref([])
+const showEditDialog = ref(false)
+const currentBill = ref(null)
 
 const hasData = computed(() => expenseData.value.length > 0)
 
@@ -316,6 +327,15 @@ const loadTags = async () => {
 const getTagName = (tagId) => {
   const tag = tagList.value.find(t => t.id === tagId)
   return tag ? tag.tagName : ''
+}
+
+const handleEdit = (row) => {
+  currentBill.value = row
+  showEditDialog.value = true
+}
+
+const handleEditSuccess = () => {
+  loadBillDetail(selectedDate.value)
 }
 
 const handleResize = () => {
