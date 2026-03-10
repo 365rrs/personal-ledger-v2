@@ -1,154 +1,185 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ledger.mapper.BillMapper">
-  <resultMap id="BaseResultMap" type="com.ledger.entity.Bill">
-    <!--@mbg.generated-->
-    <!--@Table bill-->
-    <id column="id" jdbcType="BIGINT" property="id" />
-    <result column="transaction_date" jdbcType="DATE" property="transactionDate" />
-    <result column="transaction_time" jdbcType="TIME" property="transactionTime" />
-    <result column="income_amount" jdbcType="DECIMAL" property="incomeAmount" />
-    <result column="expense_amount" jdbcType="DECIMAL" property="expenseAmount" />
-    <result column="amount_type" jdbcType="VARCHAR" property="amountType" />
-    <result column="transaction_type" jdbcType="VARCHAR" property="transactionType" />
-    <result column="transaction_desc" jdbcType="VARCHAR" property="transactionDesc" />
-    <result column="payment_channel" jdbcType="VARCHAR" property="paymentChannel" />
-    <!-- 同时映射 category 和 category_id 字段 -->
-    <result column="category" jdbcType="VARCHAR" property="category" />
-    <result column="category_id" jdbcType="BIGINT" property="categoryId" />
-    <!-- 同时映射 sub_category 和 sub_category_id 字段 -->
-    <result column="sub_category" jdbcType="VARCHAR" property="subCategory" />
-    <result column="sub_category_id" jdbcType="BIGINT" property="subCategoryId" />
-    <result column="manual_remark" jdbcType="VARCHAR" property="manualRemark" />
-    <result column="include_in_statistics" jdbcType="VARCHAR" property="includeInStatistics" />
-    <result column="manual_entry" jdbcType="VARCHAR" property="manualEntry" />
-    <result column="data_hash" jdbcType="VARCHAR" property="dataHash" />
-    <result column="creator_code" jdbcType="VARCHAR" property="creatorCode" />
-    <result column="updater_code" jdbcType="VARCHAR" property="updaterCode" />
-    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
-    <result column="updater_name" jdbcType="VARCHAR" property="updaterName" />
-    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
-    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
-    <result column="deleted" jdbcType="VARCHAR" property="deleted" />
-  </resultMap>
-  <sql id="Base_Column_List">
-    <!--@mbg.generated-->
-    id, transaction_date, transaction_time, income_amount, expense_amount, amount_type, 
-    transaction_type, transaction_desc, payment_channel, category, category_id, sub_category, sub_category_id, manual_remark, 
-    include_in_statistics, manual_entry, data_hash, creator_code, updater_code, creator_name, 
-    updater_name, create_time, update_time, deleted
-  </sql>
-  
-  <!-- 公共查询条件 -->
-  <sql id="Common_Where_Clause">
-    <where>
-        deleted = '0'
-        
-        <!-- 交易类型 -->
-        <if test="dto.transactionType != null and dto.transactionType != ''">
-            AND transaction_type = #{dto.transactionType}
-        </if>
-        
-        <!-- 分类（支持 categoryId 和 category 两种方式） -->
-        <if test="dto.categoryId != null">
-            AND category_id = #{dto.categoryId}
-        </if>
-        <if test="dto.category != null and dto.category != ''">
-            AND category = #{dto.category}
-        </if>
-        
-        <!-- 二级分类（支持 subCategoryId 和 sub_category 两种方式） -->
-        <if test="dto.subCategoryId != null">
-            AND sub_category_id = #{dto.subCategoryId}
-        </if>
-        <if test="dto.subCategory != null and dto.subCategory != ''">
-            AND sub_category = #{dto.subCategory}
-        </if>
-        
-        <!-- 支付渠道 -->
-        <if test="dto.paymentChannel != null and dto.paymentChannel != ''">
-            AND payment_channel = #{dto.paymentChannel}
-        </if>
-        
-        <!-- 手工记账 -->
-        <if test="dto.manualEntry != null and dto.manualEntry != ''">
-            AND manual_entry = #{dto.manualEntry}
-        </if>
-        
-        <!-- 是否计入统计 -->
-        <if test="dto.includeInStatistics != null and dto.includeInStatistics != ''">
-            AND include_in_statistics = #{dto.includeInStatistics}
-        </if>
-        
-        <!-- 收支类型 -->
-        <if test="dto.amountType != null and dto.amountType != ''">
-            AND amount_type = #{dto.amountType}
-        </if>
-        
-        <!-- 关键词搜索（交易描述或用户备注） -->
-        <if test="dto.keywords != null and dto.keywords != ''">
-            AND (
-                transaction_desc LIKE CONCAT('%', #{dto.keywords}, '%')
-                OR manual_remark LIKE CONCAT('%', #{dto.keywords}, '%')
-            )
-        </if>
-        
-        <!-- 标签筛选（支持多个标签，OR 关系） -->
-        <if test="dto.tagIds != null and dto.tagIds.size() > 0">
-            AND id IN (
-                SELECT bill_id FROM bill_tag_relation 
+    <resultMap id="BaseResultMap" type="com.ledger.entity.Bill">
+        <!--@mbg.generated-->
+        <!--@Table bill-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="transaction_date" jdbcType="DATE" property="transactionDate"/>
+        <result column="transaction_time" jdbcType="TIME" property="transactionTime"/>
+        <result column="income_amount" jdbcType="DECIMAL" property="incomeAmount"/>
+        <result column="expense_amount" jdbcType="DECIMAL" property="expenseAmount"/>
+        <result column="amount_type" jdbcType="VARCHAR" property="amountType"/>
+        <result column="transaction_type" jdbcType="VARCHAR" property="transactionType"/>
+        <result column="transaction_desc" jdbcType="VARCHAR" property="transactionDesc"/>
+        <result column="payment_channel" jdbcType="VARCHAR" property="paymentChannel"/>
+        <!-- 同时映射 category 和 category_id 字段 -->
+        <result column="category" jdbcType="VARCHAR" property="category"/>
+        <result column="category_id" jdbcType="BIGINT" property="categoryId"/>
+        <!-- 同时映射 sub_category 和 sub_category_id 字段 -->
+        <result column="sub_category" jdbcType="VARCHAR" property="subCategory"/>
+        <result column="sub_category_id" jdbcType="BIGINT" property="subCategoryId"/>
+        <result column="manual_remark" jdbcType="VARCHAR" property="manualRemark"/>
+        <result column="include_in_statistics" jdbcType="VARCHAR" property="includeInStatistics"/>
+        <result column="manual_entry" jdbcType="VARCHAR" property="manualEntry"/>
+        <result column="data_hash" jdbcType="VARCHAR" property="dataHash"/>
+        <result column="creator_code" jdbcType="VARCHAR" property="creatorCode"/>
+        <result column="updater_code" jdbcType="VARCHAR" property="updaterCode"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="updater_name" jdbcType="VARCHAR" property="updaterName"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="deleted" jdbcType="VARCHAR" property="deleted"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id,
+        transaction_date,
+        transaction_time,
+        income_amount,
+        expense_amount,
+        amount_type,
+        transaction_type,
+        transaction_desc,
+        payment_channel,
+        category,
+        category_id,
+        sub_category,
+        sub_category_id,
+        manual_remark,
+        include_in_statistics,
+        manual_entry,
+        data_hash,
+        creator_code,
+        updater_code,
+        creator_name,
+        updater_name,
+        create_time,
+        update_time,
+        deleted
+    </sql>
+
+    <!-- 公共查询条件 -->
+    <sql id="Common_Where_Clause">
+        <where>
+            deleted = '0'
+
+            <!-- 交易类型 -->
+            <if test="dto.transactionType != null and dto.transactionType != ''">
+                AND transaction_type = #{dto.transactionType}
+            </if>
+
+            <!-- 分类（支持 categoryId 和 category 两种方式） -->
+            <if test="dto.categoryId != null">
+                AND category_id = #{dto.categoryId}
+            </if>
+            <if test="dto.category != null and dto.category != ''">
+                AND category = #{dto.category}
+            </if>
+
+            <!-- 二级分类（支持 subCategoryId 和 sub_category 两种方式） -->
+            <if test="dto.subCategoryId != null">
+                AND sub_category_id = #{dto.subCategoryId}
+            </if>
+            <if test="dto.subCategory != null and dto.subCategory != ''">
+                AND sub_category = #{dto.subCategory}
+            </if>
+
+            <!-- 支付渠道 -->
+            <if test="dto.paymentChannel != null and dto.paymentChannel != ''">
+                AND payment_channel = #{dto.paymentChannel}
+            </if>
+
+            <!-- 手工记账 -->
+            <if test="dto.manualEntry != null and dto.manualEntry != ''">
+                AND manual_entry = #{dto.manualEntry}
+            </if>
+
+            <!-- 是否计入统计 -->
+            <if test="dto.includeInStatistics != null and dto.includeInStatistics != ''">
+                AND include_in_statistics = #{dto.includeInStatistics}
+            </if>
+
+            <!-- 收支类型 -->
+            <if test="dto.amountType != null and dto.amountType != ''">
+                AND amount_type = #{dto.amountType}
+            </if>
+
+            <!-- 关键词搜索（交易描述或用户备注） -->
+            <if test="dto.keywords != null and dto.keywords != ''">
+                AND (
+                    transaction_desc LIKE CONCAT('%', #{dto.keywords}, '%')
+                        OR manual_remark LIKE CONCAT('%', #{dto.keywords}, '%')
+                    )
+            </if>
+
+            <!-- 标签筛选（支持多个标签，OR 关系） -->
+            <if test="dto.tagIds != null and dto.tagIds.size() > 0">
+                AND id IN (
+                SELECT bill_id
+                FROM bill_tag_relation
                 WHERE tag_id IN
                 <foreach collection="dto.tagIds" item="tagId" open="(" separator="," close=")">
                     #{tagId}
                 </foreach>
                 AND deleted = '0'
-            )
-        </if>
-        
-        <!-- 最小金额（同时筛选收入金额和支出金额） -->
-        <if test="dto.minAmount != null">
-            AND (income_amount &gt;= #{dto.minAmount} OR expense_amount &gt;= #{dto.minAmount})
-        </if>
-        
-        <!-- 最大金额（同时筛选收入金额和支出金额） -->
-        <if test="dto.maxAmount != null">
-            AND (income_amount &lt;= #{dto.maxAmount} OR expense_amount &lt;= #{dto.maxAmount})
-        </if>
-        
-        <!-- 开始日期 -->
-        <if test="dto.startDate != null">
-            AND transaction_date &gt;= #{dto.startDate}
-        </if>
-        
-        <!-- 结束日期 -->
-        <if test="dto.endDate != null">
-            AND transaction_date &lt;= #{dto.endDate}
-        </if>
-    </where>
-  </sql>
+                )
+            </if>
+
+            <!-- 最小金额（同时筛选收入金额和支出金额） -->
+            <if test="dto.minAmount != null">
+                AND (income_amount &gt;= #{dto.minAmount} OR expense_amount &gt;= #{dto.minAmount})
+            </if>
+
+            <!-- 最大金额（同时筛选收入金额和支出金额） -->
+            <if test="dto.maxAmount != null">
+                AND (income_amount &lt;= #{dto.maxAmount} OR expense_amount &lt;= #{dto.maxAmount})
+            </if>
+
+            <!-- 开始日期 -->
+            <if test="dto.startDate != null">
+                AND transaction_date &gt;= #{dto.startDate}
+            </if>
+
+            <!-- 结束日期 -->
+            <if test="dto.endDate != null">
+                AND transaction_date &lt;= #{dto.endDate}
+            </if>
+        </where>
+    </sql>
 
     <!-- 分页查询账单列表 -->
     <select id="selectBillPage" resultMap="BaseResultMap">
         SELECT
-            <include refid="Base_Column_List" />
+        <include refid="Base_Column_List"/>
         FROM bill
-        <include refid="Common_Where_Clause" />
+        <include refid="Common_Where_Clause"/>
         ORDER BY transaction_date DESC, transaction_time DESC
     </select>
-    
+
     <!-- 查询统计数据 -->
     <select id="getStatistics" resultType="com.ledger.vo.BillStatisticsVO">
-        SELECT
-            COALESCE(SUM(CASE WHEN amount_type = 'INCOME' THEN income_amount ELSE 0 END), 0) AS totalIncome,
-            COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0) AS totalExpense
+        SELECT COALESCE(SUM(CASE WHEN amount_type = 'INCOME' THEN income_amount ELSE 0 END), 0)   AS totalIncome,
+               COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0) AS totalExpense
         FROM bill
-        <include refid="Common_Where_Clause" />
+        <include refid="Common_Where_Clause"/>
     </select>
 
-    <!-- 更新账单（动态更新非空字段） -->
+    <!-- 更新账单（手工记账允许更新所有字段，导入账单只更新部分字段） -->
     <update id="updateBill" parameterType="com.ledger.entity.Bill">
         UPDATE bill
         <set>
+            <!-- 手工记账可以更新的字段 -->
+            <if test="manualEntry != null and manualEntry == '1'.toString()">
+                amount_type      = #{amountType,jdbcType=VARCHAR},
+                income_amount    = #{incomeAmount,jdbcType=DECIMAL},
+                expense_amount   = #{expenseAmount,jdbcType=DECIMAL},
+                transaction_date = #{transactionDate,jdbcType=DATE},
+                transaction_time = #{transactionTime,jdbcType=TIME},
+                transaction_type = #{transactionType,jdbcType=VARCHAR},
+                transaction_desc = #{transactionDesc,jdbcType=VARCHAR},
+            </if>
+            <!-- 所有账单都可以更新的字段 -->
             payment_channel       = #{paymentChannel,jdbcType=VARCHAR},
             category              = #{category,jdbcType=VARCHAR},
             category_id           = #{categoryId,jdbcType=BIGINT},
@@ -158,7 +189,7 @@
             include_in_statistics = #{includeInStatistics,jdbcType=VARCHAR},
             updater_code          = #{updaterCode,jdbcType=VARCHAR},
             updater_name          = #{updaterName,jdbcType=VARCHAR},
-            update_time           = NOW(),
+            update_time           = NOW()
         </set>
         WHERE id = #{id,jdbcType=BIGINT}
           AND deleted = '0'
@@ -166,10 +197,9 @@
 
     <!-- 查询每日支出 -->
     <select id="selectDailyExpense" resultType="com.ledger.vo.BillDailyExpenseVO">
-        SELECT
-            DATE_FORMAT(transaction_date, '%Y-%m-%d') AS date,
-            COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0) -
-            COALESCE(SUM(CASE WHEN amount_type = 'INCOME' THEN income_amount ELSE 0 END), 0) AS balance
+        SELECT DATE_FORMAT(transaction_date, '%Y-%m-%d')                                        AS date,
+               COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0) -
+               COALESCE(SUM(CASE WHEN amount_type = 'INCOME' THEN income_amount ELSE 0 END), 0) AS balance
         FROM bill
         WHERE deleted = '0'
           AND include_in_statistics = '1'
@@ -181,50 +211,43 @@
 
     <!-- 查询累计支出 -->
     <select id="selectCumulativeExpense" resultType="com.ledger.vo.BillCumulativeExpenseVO">
-        SELECT
-            DATE_FORMAT(transaction_date, '%Y-%m-%d') AS date,
-            daily_expense AS dailyExpense,
-            SUM(COALESCE(daily_expense, 0)) OVER (ORDER BY transaction_date) AS cumulativeExpense
-        FROM (
-            SELECT
-                transaction_date,
-                COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0) -
-                COALESCE(SUM(CASE WHEN amount_type = 'INCOME' THEN income_amount ELSE 0 END), 0) AS daily_expense
-            FROM bill
-            WHERE deleted = '0'
-              AND include_in_statistics = '1'
-              AND YEAR(transaction_date) = #{year}
-              AND MONTH(transaction_date) = #{month}
-            GROUP BY transaction_date
-        ) AS daily
+        SELECT DATE_FORMAT(transaction_date, '%Y-%m-%d')                        AS date,
+               daily_expense                                                    AS dailyExpense,
+               SUM(COALESCE(daily_expense, 0)) OVER (ORDER BY transaction_date) AS cumulativeExpense
+        FROM (SELECT transaction_date,
+                     COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0) -
+                     COALESCE(SUM(CASE WHEN amount_type = 'INCOME' THEN income_amount ELSE 0 END), 0) AS daily_expense
+              FROM bill
+              WHERE deleted = '0'
+                AND include_in_statistics = '1'
+                AND YEAR(transaction_date) = #{year}
+                AND MONTH(transaction_date) = #{month}
+              GROUP BY transaction_date) AS daily
         ORDER BY transaction_date ASC
     </select>
 
     <!-- 按分类统计 -->
     <select id="selectCategoryStatistics" resultType="com.ledger.vo.BillCategoryStatisticsVO">
-        SELECT
-            category,
-            SUM(amount) AS amount,
-            COUNT(*) AS count
+        SELECT category,
+               SUM(amount) AS amount,
+               COUNT(*)    AS count
         FROM (
-            SELECT
-                COALESCE(category, '未分类') AS category,
-                CASE
-                    WHEN amount_type = 'INCOME' THEN income_amount
-                    WHEN amount_type = 'EXPENSE' THEN expense_amount
-                    ELSE 0
-                END AS amount
-            FROM bill
-            WHERE deleted = '0'
-              AND include_in_statistics = '1'
-              AND amount_type = #{amountType}
-              AND YEAR(transaction_date) = #{year}
-              <if test="month != null">
-                  AND MONTH(transaction_date) = #{month}
-              </if>
+        SELECT COALESCE(category, '未分类') AS category,
+               CASE
+                   WHEN amount_type = 'INCOME' THEN income_amount
+                   WHEN amount_type = 'EXPENSE' THEN expense_amount
+                   ELSE 0
+                   END                      AS amount
+        FROM bill
+        WHERE deleted = '0'
+          AND include_in_statistics = '1'
+          AND amount_type = #{amountType}
+          AND YEAR(transaction_date) = #{year}
+        <if test="month != null">
+            AND MONTH(transaction_date) = #{month}
+        </if>
         ) AS data
         GROUP BY category
         ORDER BY amount DESC
     </select>
-
 </mapper>

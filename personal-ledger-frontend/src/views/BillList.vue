@@ -128,7 +128,7 @@
                 multiple 
                 filterable
                 clearable
-                style="width: 300px;"
+                style="width: 300px; margin-right: 12px;"
               >
                 <el-option
                   v-for="tag in tagList"
@@ -146,6 +146,12 @@
                     <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
                   </div>
                 </el-option>
+              </el-select>
+              
+              <span style="margin-right: 12px;">是否手工记账：</span>
+              <el-select v-model="queryForm.manualEntry" placeholder="全部" clearable style="width: 120px;">
+                <el-option label="是" value="1" />
+                <el-option label="否" value="0" />
               </el-select>
             </div>
             
@@ -650,13 +656,13 @@
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="金额类型" prop="amountType">
-          <el-radio-group v-model="form.amountType" :disabled="isViewMode || isEditMode">
+          <el-radio-group v-model="form.amountType" :disabled="isViewMode || (isEditMode && form.manualEntry === '0')">
             <el-radio label="INCOME">收入</el-radio>
             <el-radio label="EXPENSE">支出</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="金额" prop="amount">
-          <el-input-number v-model="form.amount" :min="0.01" :precision="2" :step="1" :disabled="isViewMode || isEditMode" />
+          <el-input-number v-model="form.amount" :min="0.01" :precision="2" :step="1" :disabled="isViewMode || (isEditMode && form.manualEntry === '0')" />
         </el-form-item>
         <el-form-item label="分类" prop="categoryId">
           <el-select 
@@ -699,7 +705,7 @@
             type="date"
             placeholder="选择日期"
             value-format="YYYY-MM-DD"
-            :disabled="isViewMode || isEditMode"
+            :disabled="isViewMode || (isEditMode && form.manualEntry === '0')"
           />
         </el-form-item>
         <el-form-item label="交易时间">
@@ -707,11 +713,11 @@
             v-model="form.transactionTime"
             placeholder="选择时间"
             value-format="HH:mm:ss"
-            :disabled="isViewMode || isEditMode"
+            :disabled="isViewMode || (isEditMode && form.manualEntry === '0')"
           />
         </el-form-item>
         <el-form-item label="交易类型">
-          <el-input v-model="form.transactionType" placeholder="请输入交易类型" :disabled="isViewMode || isEditMode" />
+          <el-input v-model="form.transactionType" placeholder="请输入交易类型" :disabled="isViewMode || (isEditMode && form.manualEntry === '0')" />
         </el-form-item>
         <el-form-item label="支付渠道">
           <el-select 
@@ -736,7 +742,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="交易描述">
-          <el-input v-model="form.transactionDesc" type="textarea" :rows="3" :disabled="isViewMode || isEditMode" />
+          <el-input v-model="form.transactionDesc" type="textarea" :rows="3" :disabled="isViewMode || (isEditMode && form.manualEntry === '0')" />
         </el-form-item>
         <el-form-item label="手工备注">
           <el-input v-model="form.manualRemark" type="textarea" :rows="2" :disabled="isViewMode" />
@@ -896,6 +902,7 @@ const queryForm = reactive({
   paymentChannel: '',
   amountType: '',
   includeInStatistics: '',
+  manualEntry: '',  // 是否手工记账
   tagIds: [],  // 标签 ID 数组
   keywords: '',
   minAmount: null,
@@ -1056,7 +1063,8 @@ const form = reactive({
   transactionDesc: '',
   manualRemark: '',
   includeInStatistics: '1',
-  tagIds: []  // 标签 ID 数组
+  tagIds: [],  // 标签 ID 数组
+  manualEntry: '1'  // 是否手工记账，默认为是
 })
 
 const rules = {
@@ -1211,6 +1219,7 @@ const handleReset = () => {
   queryForm.paymentChannel = ''
   queryForm.amountType = ''
   queryForm.includeInStatistics = ''
+  queryForm.manualEntry = ''  // 重置手工记账
   queryForm.tagIds = []  // 重置标签
   queryForm.keywords = ''
   queryForm.minAmount = null
@@ -1271,7 +1280,8 @@ const handleEdit = (row) => {
     transactionDesc: row.transactionDesc,
     manualRemark: row.manualRemark,
     includeInStatistics: row.includeInStatistics,
-    tagIds: row.tagIds || []  // 加载标签
+    tagIds: row.tagIds || [],  // 加载标签
+    manualEntry: row.manualEntry || '0'  // 加载是否手工记账
   })
 }
 
@@ -1341,6 +1351,7 @@ const handleSubmit = async () => {
       transactionDesc: form.transactionDesc,
       manualRemark: form.manualRemark,
       includeInStatistics: form.includeInStatistics,
+      manualEntry: form.manualEntry,  // 新增：是否手工记账
       tagIds: form.tagIds  // 标签 ID 数组
     }
     

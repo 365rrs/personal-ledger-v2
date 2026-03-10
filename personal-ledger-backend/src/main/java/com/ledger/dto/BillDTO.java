@@ -68,5 +68,10 @@ public class BillDTO {
     
     private String includeInStatistics;
     
+    /**
+     * 是否手工记账：1-是，0-否
+     */
+    private String manualEntry;
+    
     private List<Long> tagIds;
 }
