@@ -71,6 +71,16 @@ const routes = [
         path: 'large-expense',
         name: 'LargeExpense',
         component: () => import('../views/LargeExpense.vue')
+      },
+      {
+        path: 'monthly-expense',
+        name: 'MonthlyExpense',
+        component: () => import('../views/MonthlyExpense.vue')
+      },
+      {
+        path: 'monthly-cumulative-expense',
+        name: 'MonthlyCumulativeExpense',
+        component: () => import('../views/MonthlyCumulativeExpense.vue')
       }
     ]
   }

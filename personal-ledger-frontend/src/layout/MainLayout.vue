@@ -30,6 +30,8 @@
           </template>
           <el-menu-item index="/daily-expense">每日支出</el-menu-item>
           <el-menu-item index="/cumulative-expense">累计支出</el-menu-item>
+          <el-menu-item index="/monthly-expense">月度支出</el-menu-item>
+          <el-menu-item index="/monthly-cumulative-expense">月度累计支出</el-menu-item>
           <el-menu-item index="/category-statistics">分类统计</el-menu-item>
           <el-menu-item index="/large-expense">大额支出</el-menu-item>
         </el-sub-menu>
@@ -78,6 +80,8 @@ const pageTitle = computed(() => {
     '/data-clean-rule': '清洗规则',
     '/daily-expense': '每日支出',
     '/cumulative-expense': '累计支出',
+    '/monthly-expense': '月度支出',
+    '/monthly-cumulative-expense': '月度累计支出',
     '/category-statistics': '分类统计',
     '/large-expense': '大额支出'
   }
