@@ -89,3 +89,13 @@ export function getCategoryStatistics(data) {
     data
   })
 }
+
+// 导出账单
+export function exportBills(data) {
+  return request({
+    url: '/bill/export',
+    method: 'post',
+    data,
+    responseType: 'blob'
+  })
+}

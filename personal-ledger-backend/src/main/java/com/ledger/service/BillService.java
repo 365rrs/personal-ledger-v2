@@ -10,6 +10,7 @@ import com.ledger.dto.BillQueryDTO;
 import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
+import com.ledger.vo.BillExportVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 
@@ -72,4 +73,9 @@ public interface BillService {
      * 按分类统计
      */
     List<BillCategoryStatisticsVO> getCategoryStatistics(BillCategoryStatisticsQueryDTO dto);
+    
+    /**
+     * 导出账单
+     */
+    List<BillExportVO> exportBills(BillQueryDTO dto);
 }

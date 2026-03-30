@@ -76,4 +76,12 @@ public interface BillMapper extends BaseMapper<Bill> {
     List<BillCategoryStatisticsVO> selectCategoryStatistics(@Param("year") Integer year, 
                                                              @Param("month") Integer month, 
                                                              @Param("amountType") String amountType);
+    
+    /**
+     * 查询账单列表（不分页）
+     *
+     * @param dto 查询条件
+     * @return 账单列表
+     */
+    List<Bill> selectBillList(@Param("dto") BillQueryDTO dto);
 }

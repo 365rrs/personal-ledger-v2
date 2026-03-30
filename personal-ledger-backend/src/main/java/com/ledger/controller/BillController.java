@@ -1,5 +1,6 @@
 package com.ledger.controller;
 
+import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ledger.common.Response;
 import com.ledger.dto.BillBatchUpdateDTO;
@@ -12,6 +13,7 @@ import com.ledger.service.BillService;
 import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
+import com.ledger.vo.BillExportVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +23,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -105,5 +112,23 @@ public class BillController {
     public Response<List<BillCategoryStatisticsVO>> getCategoryStatistics(@RequestBody BillCategoryStatisticsQueryDTO dto) {
         List<BillCategoryStatisticsVO> list = billService.getCategoryStatistics(dto);
         return Response.success(list);
+    }
+    
+    @Operation(summary = "导出账单")
+    @PostMapping("/export")
+    public void export(@RequestBody BillQueryDTO dto, HttpServletResponse response) throws IOException {
+        // 查询数据
+        List<BillExportVO> list = billService.exportBills(dto);
+        
+        // 设置响应头
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        String fileName = URLEncoder.encode("账单导出_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")), "UTF-8");
+        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+        
+        // 导出
+        EasyExcel.write(response.getOutputStream(), BillExportVO.class)
+                .sheet("账单列表")
+                .doWrite(list);
     }
 }

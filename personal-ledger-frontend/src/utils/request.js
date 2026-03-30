@@ -8,6 +8,11 @@ const request = axios.create({
 
 request.interceptors.response.use(
   response => {
+    // 如果是 blob 类型，直接返回数据
+    if (response.config.responseType === 'blob') {
+      return response.data
+    }
+    
     const res = response.data
     if (res.code !== 200) {
       ElMessage.error(res.message || 'Error')

@@ -9,6 +9,10 @@
               <el-icon><Setting /></el-icon>
               列设置
             </el-button>
+            <el-button type="success" @click="handleExport" :loading="exporting">
+              <el-icon><Download /></el-icon>
+              导出
+            </el-button>
             <el-button type="primary" @click="handleCreate">+ 记一笔</el-button>
           </div>
         </div>
@@ -831,8 +835,8 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete, RefreshRight, Plus } from '@element-plus/icons-vue'
-import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills } from '@/api/bill'
+import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete, RefreshRight, Plus, Download } from '@element-plus/icons-vue'
+import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills, exportBills } from '@/api/bill'
 import { getTagList } from '@/api/tag'
 import { getCategoryList } from '@/api/category'
 import { listPaymentChannels } from '@/api/paymentChannel'
@@ -1650,6 +1654,63 @@ const executeBatchClean = async () => {
     ElMessage.error(error.message || '批量清洗失败')
   } finally {
     batchSubmitting.value = false
+  }
+}
+
+// 导出状态
+const exporting = ref(false)
+
+// 导出功能
+const handleExport = async () => {
+  try {
+    exporting.value = true
+    
+    // 构建导出查询条件（与列表查询条件一致，但不包含分页参数）
+    const exportQuery = {
+      transactionType: queryForm.transactionType,
+      categoryId: queryForm.categoryId,
+      subCategoryId: queryForm.subCategoryId,
+      paymentChannel: queryForm.paymentChannel,
+      amountType: queryForm.amountType,
+      includeInStatistics: queryForm.includeInStatistics,
+      manualEntry: queryForm.manualEntry,
+      tagIds: queryForm.tagIds,
+      keywords: queryForm.keywords,
+      minAmount: queryForm.minAmount,
+      maxAmount: queryForm.maxAmount,
+      startDate: queryForm.startDate,
+      endDate: queryForm.endDate
+    }
+    
+    console.log('导出查询条件:', exportQuery)
+    
+    const res = await exportBills(exportQuery)
+    
+    console.log('导出响应:', res)
+    
+    // 检查响应是否为 blob
+    if (!(res instanceof Blob)) {
+      throw new Error('响应数据格式错误')
+    }
+    
+    // 创建下载链接
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    const timestamp = new Date().toISOString().replace(/[:\-T]/g, '').split('.')[0]
+    link.download = `账单导出_${timestamp}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error(error.message || '导出失败')
+  } finally {
+    exporting.value = false
   }
 }
 

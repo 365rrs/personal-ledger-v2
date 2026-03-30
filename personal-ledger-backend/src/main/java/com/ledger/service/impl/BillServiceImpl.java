@@ -11,16 +11,19 @@ import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.entity.Bill;
+import com.ledger.entity.BillTag;
 import com.ledger.entity.BillTagRelation;
 import com.ledger.enums.IncludeInStatisticsEnum;
 import com.ledger.exception.BusinessException;
 import com.ledger.mapper.BillMapper;
+import com.ledger.mapper.BillTagMapper;
 import com.ledger.mapper.BillTagRelationMapper;
 import com.ledger.service.BillService;
 import com.ledger.util.DataHashUtil;
 import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
+import com.ledger.vo.BillExportVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +59,9 @@ public class BillServiceImpl implements BillService {
 
     @Resource
     private BillTagRelationMapper billTagRelationMapper;
+    
+    @Resource
+    private BillTagMapper billTagMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -354,5 +360,49 @@ public class BillServiceImpl implements BillService {
         }
         
         return list;
+    }
+
+    @Override
+    public List<BillExportVO> exportBills(BillQueryDTO dto) {
+        // 查询所有符合条件的账单（不分页）
+        List<Bill> bills = billMapper.selectBillList(dto);
+        
+        // 转换为导出VO
+        return bills.stream().map(bill -> {
+            BillExportVO vo = new BillExportVO();
+            vo.setTransactionDate(bill.getTransactionDate() != null ? bill.getTransactionDate().toString() : "");
+            vo.setTransactionTime(bill.getTransactionTime() != null ? bill.getTransactionTime().toString() : "");
+            vo.setIncomeAmount(bill.getIncomeAmount());
+            vo.setExpenseAmount(bill.getExpenseAmount());
+            // 转换收支类型为中文
+            vo.setAmountType("INCOME".equals(bill.getAmountType()) ? "收入" : "支出");
+            vo.setTransactionType(bill.getTransactionType());
+            vo.setCategory(bill.getCategory());
+            vo.setSubCategory(bill.getSubCategory());
+            vo.setPaymentChannel(bill.getPaymentChannel());
+            vo.setTransactionDesc(bill.getTransactionDesc());
+            vo.setManualRemark(bill.getManualRemark());
+            vo.setIncludeInStatistics("1".equals(bill.getIncludeInStatistics()) ? "是" : "否");
+            vo.setManualEntry("1".equals(bill.getManualEntry()) ? "是" : "否");
+            
+            // 加载标签
+            List<Long> tagIds = loadTagIds(bill.getId());
+            if (tagIds != null && !tagIds.isEmpty()) {
+                // 查询标签名称
+                List<String> tagNames = tagIds.stream()
+                    .map(tagId -> {
+                        BillTag tag = billTagMapper.selectById(tagId);
+                        return tag != null ? tag.getTagName() : null;
+                    })
+                    .filter(name -> name != null)
+                    .collect(Collectors.toList());
+                // 用逗号分隔
+                vo.setTags(String.join(", ", tagNames));
+            } else {
+                vo.setTags("");
+            }
+            
+            return vo;
+        }).collect(Collectors.toList());
     }
 }

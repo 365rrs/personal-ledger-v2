@@ -250,4 +250,13 @@
         GROUP BY category
         ORDER BY amount DESC
     </select>
+
+    <!-- 查询账单列表（不分页） -->
+    <select id="selectBillList" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM bill
+        <include refid="Common_Where_Clause"/>
+        ORDER BY transaction_date DESC, transaction_time DESC
+    </select>
 </mapper>
