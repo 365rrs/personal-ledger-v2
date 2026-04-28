@@ -154,7 +154,20 @@
         <include refid="Base_Column_List"/>
         FROM bill
         <include refid="Common_Where_Clause"/>
-        ORDER BY transaction_date DESC, transaction_time DESC
+        <choose>
+            <when test="dto.orderBy == 'transactionDate'">
+                ORDER BY transaction_date ${dto.orderDirection == 'asc' ? 'ASC' : 'DESC'}, transaction_time ${dto.orderDirection == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <when test="dto.orderBy == 'incomeAmount'">
+                ORDER BY income_amount ${dto.orderDirection == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <when test="dto.orderBy == 'expenseAmount'">
+                ORDER BY expense_amount ${dto.orderDirection == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <otherwise>
+                ORDER BY transaction_date DESC, transaction_time DESC
+            </otherwise>
+        </choose>
     </select>
 
     <!-- 查询统计数据 -->

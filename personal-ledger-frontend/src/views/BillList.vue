@@ -259,6 +259,7 @@
         style="width: 100%"
         class="bill-table"
         @selection-change="handleSelectionChange"
+        @sort-change="handleSortChange"
       >
         <el-table-column type="selection" width="55" />
         <!-- 交易日期 -->
@@ -267,6 +268,7 @@
           prop="transactionDate" 
           label="交易日期" 
           width="100"
+          sortable="custom"
         />
         
         <!-- 交易时间 -->
@@ -280,9 +282,11 @@
         <!-- 收入 -->
         <el-table-column 
           v-if="selectedColumns.includes('incomeAmount')"
+          prop="incomeAmount"
           label="收入" 
           width="80"
           align="right"
+          sortable="custom"
         >
           <template #default="{ row }">
             <span v-if="row.amountType === 'INCOME'" style="color: #67c23a;">
@@ -294,9 +298,11 @@
         <!-- 支出 -->
         <el-table-column 
           v-if="selectedColumns.includes('expenseAmount')"
+          prop="expenseAmount"
           label="支出" 
           width="80"
           align="right"
+          sortable="custom"
         >
           <template #default="{ row }">
             <span v-if="row.amountType === 'EXPENSE'" style="color: #f56c6c;">
@@ -932,7 +938,9 @@ const queryForm = reactive({
   minAmount: null,
   maxAmount: null,
   startDate: '',
-  endDate: ''
+  endDate: '',
+  orderBy: '',
+  orderDirection: ''
 })
 
 const dateRange = ref([])
@@ -1237,6 +1245,14 @@ const handleQuery = () => {
   loadStatistics()
 }
 
+// 排序变化
+const handleSortChange = ({ prop, order }) => {
+  queryForm.orderBy = prop || ''
+  queryForm.orderDirection = order === 'ascending' ? 'asc' : order === 'descending' ? 'desc' : ''
+  queryForm.current = 1
+  loadData()
+}
+
 // 重置
 const handleReset = () => {
   queryForm.current = 1
@@ -1253,6 +1269,8 @@ const handleReset = () => {
   queryForm.maxAmount = null
   queryForm.startDate = ''
   queryForm.endDate = ''
+  queryForm.orderBy = ''
+  queryForm.orderDirection = ''
   dateRange.value = []
   quickDate.value = 'month' // 重置时恢复默认值为本月
   selectedCategoryId.value = null  // 清空选中的分类

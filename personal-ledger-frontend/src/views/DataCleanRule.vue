@@ -235,6 +235,7 @@ const RULE_FIELD_OPTIONS = {
     { label: '二级分类名称', value: 'subCategory' },
     { label: '收支类型', value: 'amountType' },
     { label: '交易类型', value: 'transactionType' },
+    { label: '交易描述', value: 'transactionDesc' },
     { label: '支付渠道', value: 'paymentChannel' },
     { label: '用户备注', value: 'manualRemark' }
   ],

@@ -63,4 +63,14 @@ public class BillQueryDTO {
     private Double minAmount;
     
     private Double maxAmount;
+
+    /**
+     * 排序字段（驼峰命名，如 transactionDate、incomeAmount）
+     */
+    private String orderBy;
+
+    /**
+     * 排序方向：asc / desc
+     */
+    private String orderDirection;
 }
