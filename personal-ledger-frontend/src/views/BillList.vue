@@ -72,6 +72,7 @@
             clearable
             @change="handleCategoryChange"
             style="width: 150px; margin-right: 12px;"
+            popper-class="category-select-dropdown"
           >
             <el-option
               v-for="cat in categoryList"
@@ -79,10 +80,12 @@
               :label="cat.categoryName"
               :value="cat.id"
             >
-              <span>{{ cat.categoryName }}</span>
-              <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'danger' : 'success'" style="margin-left: 8px;">
-                {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
-              </el-tag>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="flex-shrink: 0;">{{ cat.categoryName }}</span>
+                <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'warning' : 'success'" style="margin-left: 8px; flex-shrink: 0;">
+                  {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
+                </el-tag>
+              </div>
             </el-option>
           </el-select>
           
@@ -121,11 +124,7 @@
                   :key="channel.id"
                   :label="channel.channelName"
                   :value="channel.channelName"
-                >
-                  <span style="margin-right: 8px;">{{ channel.icon }}</span>
-                  <span>{{ channel.channelName }}</span>
-                  <el-tag v-if="channel.channelType" size="small" style="margin-left: 4px;">{{ getChannelTypeLabel(channel.channelType) }}</el-tag>
-                </el-option>
+                />
               </el-select>
               
               <span style="margin-right: 12px;">交易类型：</span>
@@ -492,11 +491,7 @@
               :key="channel.id"
               :label="channel.channelName"
               :value="channel.channelName"
-            >
-              <span style="margin-right: 8px;">{{ channel.icon }}</span>
-              <span>{{ channel.channelName }}</span>
-              <el-tag v-if="channel.channelType" size="small" style="margin-left: 4px;">{{ getChannelTypeLabel(channel.channelType) }}</el-tag>
-            </el-option>
+            />
           </el-select>
         </el-form-item>
       </el-form>
@@ -522,6 +517,7 @@
             clearable
             @change="handleBatchCategoryChange"
             style="width: 100%;"
+            popper-class="category-select-dropdown"
           >
             <el-option
               v-for="cat in categoryList"
@@ -529,10 +525,12 @@
               :label="cat.categoryName"
               :value="cat.id"
             >
-              <span>{{ cat.categoryName }}</span>
-              <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'danger' : 'success'" style="margin-left: 8px;">
-                {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
-              </el-tag>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="flex-shrink: 0;">{{ cat.categoryName }}</span>
+                <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'warning' : 'success'" style="margin-left: 8px; flex-shrink: 0;">
+                  {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
+                </el-tag>
+              </div>
             </el-option>
           </el-select>
         </el-form-item>
@@ -698,6 +696,7 @@
             @change="handleFormCategoryChange"
             :disabled="isViewMode"
             style="width: 100%;"
+            popper-class="category-select-dropdown"
           >
             <el-option
               v-for="cat in categoryList"
@@ -705,10 +704,12 @@
               :label="cat.categoryName"
               :value="cat.id"
             >
-              <span>{{ cat.categoryName }}</span>
-              <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'danger' : 'success'" style="margin-left: 8px;">
-                {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
-              </el-tag>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="flex-shrink: 0;">{{ cat.categoryName }}</span>
+                <el-tag size="small" :type="cat.categoryType === 'EXPENSE' ? 'warning' : 'success'" style="margin-left: 8px; flex-shrink: 0;">
+                  {{ cat.categoryType === 'EXPENSE' ? '支出' : '收入' }}
+                </el-tag>
+              </div>
             </el-option>
           </el-select>
         </el-form-item>
@@ -764,11 +765,7 @@
               :key="channel.id"
               :label="channel.channelName"
               :value="channel.channelName"
-            >
-              <span style="margin-right: 8px;">{{ channel.icon }}</span>
-              <span>{{ channel.channelName }}</span>
-              <el-tag v-if="channel.channelType" size="small" style="margin-left: 4px;">{{ getChannelTypeLabel(channel.channelType) }}</el-tag>
-            </el-option>
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="交易描述">
@@ -1919,5 +1916,16 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   min-width: 100px;
+}
+
+/* 分类下拉框选项样式 */
+:deep(.category-select-dropdown .el-select-dropdown__item) {
+  display: flex !important;
+  align-items: center;
+  min-width: 200px;
+}
+
+:deep(.category-select-dropdown .el-select-dropdown__item > div) {
+  width: 100%;
 }
 </style>

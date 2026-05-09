@@ -43,12 +43,6 @@
             </template>
           </el-table-column>
           <el-table-column prop="categoryName" label="分类名称" width="150" />
-          <el-table-column prop="icon" label="图标" width="80" align="center">
-            <template #default="{ row }">
-              <span v-if="row.icon" style="font-size: 18px;">{{ row.icon }}</span>
-              <span v-else style="color: #999;">-</span>
-            </template>
-          </el-table-column>
           <el-table-column prop="categoryType" label="类型" width="100">
             <template #default="{ row }">
               <el-tag :type="row.categoryType === 'INCOME' ? 'success' : 'warning'">
@@ -98,7 +92,7 @@
           <el-input v-model="formData.categoryName" placeholder="请输入分类名称" maxlength="50" />
         </el-form-item>
         <el-form-item label="分类类型" prop="categoryType">
-          <el-radio-group v-model="formData.categoryType" :disabled="isEditMode">
+          <el-radio-group v-model="formData.categoryType" :disabled="isEditMode" @change="handleCategoryTypeChange">
             <el-radio value="INCOME">收入</el-radio>
             <el-radio value="EXPENSE">支出</el-radio>
           </el-radio-group>
@@ -108,30 +102,26 @@
             v-model="formData.parentId" 
             placeholder="选择父分类（可选）"
             clearable
-            :disabled="isEditMode"
+            :disabled="isEditMode && !formData.parentId"
             style="width: 100%"
           >
             <el-option
-              v-for="parent in parentOptions"
+              v-for="parent in filteredParentOptions"
               :key="parent.id"
               :label="parent.categoryName"
               :value="parent.id"
-            />
+            >
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>{{ parent.categoryName }}</span>
+                <el-tag 
+                  :type="parent.categoryType === 'INCOME' ? 'success' : 'warning'" 
+                  size="small"
+                >
+                  {{ parent.categoryType === 'INCOME' ? '收入' : '支出' }}
+                </el-tag>
+              </div>
+            </el-option>
           </el-select>
-        </el-form-item>
-        <el-form-item label="图标" prop="icon">
-          <div class="icon-selector">
-            <div class="icon-options">
-              <span 
-                v-for="icon in iconOptions" 
-                :key="icon"
-                :class="['icon-option', { selected: formData.icon === icon }]"
-                @click="formData.icon = icon"
-              >
-                {{ icon }}
-              </span>
-            </div>
-          </div>
         </el-form-item>
         <el-form-item label="排序序号" prop="sortOrder">
           <el-input-number v-model="formData.sortOrder" :min="0" :max="9999" style="width: 100%" />
@@ -146,7 +136,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Rank } from '@element-plus/icons-vue'
 import {
@@ -189,7 +179,6 @@ const formData = ref({
   categoryName: '',
   categoryType: 'EXPENSE',
   parentId: null,
-  icon: '',
   sortOrder: 0
 })
 
@@ -368,7 +357,6 @@ const handleParentDrag = async (draggedData, oldDomIndex, newDomIndex) => {
     categoryName: item.categoryName,
     categoryType: item.categoryType,
     parentId: item.parentId,
-    icon: item.icon,
     sortOrder: idx + 1,
     enabled: item.enabled
   }))
@@ -502,21 +490,40 @@ const loadParentOptions = async () => {
   try {
     // 只加载一级分类作为父分类选项
     const res = await getCategoryList('', '')
-    parentOptions.value = (res.data || []).filter(item => !item.parentId)
+    let allParents = (res.data || []).filter(item => !item.parentId)
+    
+    // 如果是编辑模式，需要排除当前分类本身（避免循环引用）
+    if (isEditMode.value && formData.value.id) {
+      allParents = allParents.filter(item => item.id !== formData.value.id)
+    }
+    
+    parentOptions.value = allParents
   } catch (error) {
     console.error('加载父分类选项失败:', error)
   }
 }
 
-// 图标选项
-const iconOptions = [
-  '🍔', '🍜', '☕', '🍰', '🚗', '🚌', '🚕', '✈️',
-  '🛒', '🎁', '💰', '💳', '🏠', '💊', '📚', '🎮',
-  '🎬', '🎵', '⚽', '🏊', '💄', '👗', '📱', '💻'
-]
-
 // 父分类选项（用于选择器）
 const parentOptions = ref([])
+
+// 根据分类类型过滤父分类选项
+const filteredParentOptions = computed(() => {
+  if (!formData.value.categoryType) {
+    return parentOptions.value
+  }
+  return parentOptions.value.filter(parent => parent.categoryType === formData.value.categoryType)
+})
+
+// 分类类型变化时的处理
+const handleCategoryTypeChange = () => {
+  // 如果当前选择的父分类与新的分类类型不匹配，清空父分类
+  if (formData.value.parentId) {
+    const selectedParent = parentOptions.value.find(p => p.id === formData.value.parentId)
+    if (selectedParent && selectedParent.categoryType !== formData.value.categoryType) {
+      formData.value.parentId = null
+    }
+  }
+}
 
 // 查询
 const handleQuery = () => {
@@ -531,7 +538,7 @@ const handleReset = () => {
 }
 
 // 新建
-const handleCreate = () => {
+const handleCreate = async () => {
   isEditMode.value = false
   dialogVisible.value = true
   formData.value = {
@@ -539,9 +546,10 @@ const handleCreate = () => {
     categoryName: '',
     categoryType: 'EXPENSE',
     parentId: null,
-    icon: '',
     sortOrder: 0
   }
+  // 每次打开弹窗时重新加载父分类选项
+  await loadParentOptions()
 }
 
 // 编辑
@@ -553,9 +561,10 @@ const handleEdit = async (row) => {
     categoryName: row.categoryName,
     categoryType: row.categoryType,
     parentId: row.parentId,
-    icon: row.icon || '',
     sortOrder: row.sortOrder
   }
+  // 每次打开弹窗时重新加载父分类选项
+  await loadParentOptions()
 }
 
 // 提交表单
@@ -658,40 +667,6 @@ onMounted(() => {
 
 .table-area {
   margin-top: 20px;
-}
-
-.icon-selector {
-  width: 100%;
-}
-
-.icon-options {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.icon-option {
-  font-size: 24px;
-  cursor: pointer;
-  text-align: center;
-  padding: 8px;
-  border-radius: 4px;
-  transition: all 0.3s;
-}
-
-.icon-option:hover {
-  background-color: #f5f7fa;
-  transform: scale(1.1);
-}
-
-.icon-option.selected {
-  background-color: #ecf5ff;
-  border: 2px solid #409eff;
 }
 
 /* 拖拽排序样式 */

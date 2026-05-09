@@ -56,12 +56,6 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="icon" label="图标" width="80" align="center">
-            <template #default="{ row }">
-              <span v-if="row.icon" style="font-size: 18px;">{{ row.icon }}</span>
-              <span v-else style="color: #999;">-</span>
-            </template>
-          </el-table-column>
           <el-table-column prop="enabled" label="状态" width="80">
             <template #default="{ row }">
               <el-tag :type="row.enabled === '1' ? 'success' : 'info'">
@@ -111,20 +105,6 @@
             <el-option label="电子钱包" value="E_WALLET" />
             <el-option label="其他" value="OTHER" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="图标" prop="icon">
-          <div class="icon-selector">
-            <div class="icon-options">
-              <span 
-                v-for="icon in iconOptions" 
-                :key="icon"
-                :class="['icon-option', { selected: formData.icon === icon }]"
-                @click="formData.icon = icon"
-              >
-                {{ icon }}
-              </span>
-            </div>
-          </div>
         </el-form-item>
         <el-form-item label="排序序号" prop="sortOrder">
           <el-input-number v-model="formData.sortOrder" :min="0" :max="9999" style="width: 100%" />
@@ -180,9 +160,6 @@ const getChannelTypeTagType = (type) => {
   return channelTypeTagMap[type] || ''
 }
 
-// 图标选项
-const iconOptions = ['💵', '🏦', '💳', '💚', '💙', '🟡', '⚫', '⚪', '💰', '💸']
-
 // 查询表单
 const queryForm = reactive({
   channelName: '',
@@ -204,7 +181,6 @@ const formData = ref({
   id: null,
   channelName: '',
   channelType: '',
-  icon: '',
   sortOrder: 0,
   enabled: '1'
 })
@@ -261,7 +237,6 @@ const handleCreate = () => {
     id: null,
     channelName: '',
     channelType: '',
-    icon: '',
     sortOrder: 0,
     enabled: '1'
   }
@@ -275,7 +250,6 @@ const handleEdit = (row) => {
     id: row.id,
     channelName: row.channelName,
     channelType: row.channelType,
-    icon: row.icon,
     sortOrder: row.sortOrder,
     enabled: row.enabled
   }
@@ -423,39 +397,6 @@ onMounted(() => {
 
 .table-area {
   margin-top: 20px;
-}
-
-.icon-selector {
-  width: 100%;
-}
-
-.icon-options {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
-  padding: 12px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-}
-
-.icon-option {
-  font-size: 24px;
-  cursor: pointer;
-  padding: 8px;
-  text-align: center;
-  border-radius: 4px;
-  transition: all 0.3s;
-}
-
-.icon-option:hover {
-  background-color: #e6e8eb;
-  transform: scale(1.1);
-}
-
-.icon-option.selected {
-  background-color: #409eff;
-  color: white;
-  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
 }
 
 .drag-handle {
