@@ -8,6 +8,7 @@
         background-color="#304156"
         text-color="#bfcbd9"
         active-text-color="#409eff"
+        class="sidebar-menu"
       >
         <el-menu-item index="/dashboard">
           <el-icon><HomeFilled /></el-icon>
@@ -97,6 +98,8 @@ const pageTitle = computed(() => {
 .sidebar {
   background-color: #304156;
   overflow-x: hidden;
+  padding: 0;
+  margin: 0;
 }
 
 .logo {
@@ -107,6 +110,8 @@ const pageTitle = computed(() => {
   font-weight: bold;
   color: #fff;
   background-color: #2b3a4a;
+  margin: 0;
+  padding: 0;
 }
 
 .header {
@@ -115,6 +120,7 @@ const pageTitle = computed(() => {
   display: flex;
   align-items: center;
   padding: 0 20px;
+  height: 60px;
 }
 
 .header-title {
@@ -126,5 +132,14 @@ const pageTitle = computed(() => {
 .main-content {
   background-color: #f0f2f5;
   padding: 20px;
+}
+
+.sidebar-menu {
+  border-right: none;
+}
+
+/* 移除 Element Plus 默认的 padding */
+.sidebar :deep(.el-menu) {
+  border-right: none;
 }
 </style>
