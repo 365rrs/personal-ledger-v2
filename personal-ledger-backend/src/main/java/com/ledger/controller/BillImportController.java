@@ -75,6 +75,13 @@ public class BillImportController {
         return Response.success();
     }
     
+    @Operation(summary = "一键转换所有满足条件的记录")
+    @PostMapping("/convert-all")
+    public Response<Integer> convertAllQualified(@Parameter(description = "导入记录ID") @RequestParam Long importRecordId) {
+        Integer count = billImportService.convertAllQualified(importRecordId);
+        return Response.success(count);
+    }
+    
     @Operation(summary = "跳过记录")
     @PostMapping("/skip")
     public Response<Void> skipRecords(@Validated @RequestBody BillSkipDTO dto) {

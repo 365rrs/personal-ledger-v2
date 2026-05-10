@@ -73,6 +73,17 @@ export function convertToBill(data) {
 }
 
 /**
+ * 一键转换所有满足条件的记录
+ */
+export function convertAllQualified(importRecordId) {
+  return request({
+    url: '/bill-import/convert-all',
+    method: 'post',
+    params: { importRecordId }
+  })
+}
+
+/**
  * 跳过记录
  */
 export function skipRecords(data) {

@@ -49,6 +49,15 @@ public interface BillImportService {
     void convertToBill(BillConvertDTO dto);
     
     /**
+     * 一键转换所有满足条件的记录
+     * 条件：导入成功 + 唯一记录 + 待转换状态
+     * 
+     * @param importRecordId 导入记录ID
+     * @return 转换成功的记录数
+     */
+    Integer convertAllQualified(Long importRecordId);
+    
+    /**
      * 跳过记录
      */
     void skipRecords(BillSkipDTO dto);

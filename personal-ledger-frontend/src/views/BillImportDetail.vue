@@ -76,6 +76,15 @@
 
       <!-- 操作按钮 -->
       <div class="action-bar">
+        <el-button 
+          type="success" 
+          :disabled="statistics.pendingCount === 0"
+          :loading="convertAllLoading"
+          @click="handleConvertAll"
+        >
+          <el-icon><CircleCheck /></el-icon>
+          一键转换 ({{ statistics.pendingCount }})
+        </el-button>
         <el-button type="primary" :disabled="selectedIds.length === 0" @click="handleConvert">
           批量转换
         </el-button>
@@ -146,7 +155,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getRecord, pageDetails, getStatistics, convertToBill, skipRecords } from '@/api/billImport'
+import { CircleCheck } from '@element-plus/icons-vue'
+import { getRecord, pageDetails, getStatistics, convertToBill, convertAllQualified, skipRecords } from '@/api/billImport'
 
 const route = useRoute()
 const router = useRouter()
@@ -181,6 +191,7 @@ const queryForm = reactive({
 const tableData = ref([])
 const total = ref(0)
 const selectedIds = ref([])
+const convertAllLoading = ref(false)
 
 // 加载记录信息
 const loadRecordInfo = async () => {
@@ -251,6 +262,42 @@ const handleConvert = async () => {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '转换失败')
     }
+  }
+}
+
+// 一键转换
+const handleConvertAll = async () => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要一键转换所有满足条件的记录吗？\n\n将转换 ${statistics.value.pendingCount} 条待转换的唯一记录。`,
+      '一键转换确认',
+      {
+        type: 'warning',
+        confirmButtonText: '确定转换',
+        cancelButtonText: '取消',
+        distinguishCancelAndClose: true
+      }
+    )
+    
+    convertAllLoading.value = true
+    const res = await convertAllQualified(importRecordId.value)
+    const count = res.data
+    
+    if (count === 0) {
+      ElMessage.info('没有满足条件的记录需要转换')
+    } else {
+      ElMessage.success(`成功转换 ${count} 条记录`)
+    }
+    
+    // 刷新数据
+    await loadData()
+    await loadStatistics()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '转换失败')
+    }
+  } finally {
+    convertAllLoading.value = false
   }
 }
 

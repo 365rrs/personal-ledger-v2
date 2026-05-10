@@ -245,10 +245,6 @@
             <el-icon><DataAnalysis /></el-icon>
             <span>收支</span>
           </el-button>
-          <el-button type="success" size="small" plain @click="handleBatchClean">
-            <el-icon><RefreshRight /></el-icon>
-            <span>数据清洗</span>
-          </el-button>
         </div>
       </div>
 
@@ -266,7 +262,7 @@
           v-if="selectedColumns.includes('transactionDate')"
           prop="transactionDate" 
           label="交易日期" 
-          width="100"
+          width="120"
           sortable="custom"
         />
         
@@ -356,7 +352,7 @@
           v-if="selectedColumns.includes('transactionDesc')"
           prop="transactionDesc" 
           label="交易描述" 
-          min-width="150" 
+          min-width="200"
           show-overflow-tooltip 
         />
         
@@ -643,33 +639,6 @@
       </template>
     </el-dialog>
 
-    <!-- 批量数据清洗确认弹窗 -->
-    <el-dialog
-      v-model="showBatchCleanDialog"
-      title="数据清洗"
-      width="500px"
-    >
-      <div style="padding: 20px;">
-        <p style="margin-bottom: 16px;">确定要对选中的 <strong>{{ selectedRows.length }}</strong> 条账单进行数据清洗吗？</p>
-        <el-alert
-          title="清洗说明"
-          type="info"
-          :closable="false"
-          show-icon
-        >
-          <ul style="margin: 8px 0 0 20px; padding: 0;">
-            <li>根据预设的清洗规则自动填充分类、支付渠道、用户备注等字段</li>
-            <li>已填写的字段可能会被覆盖，请谨慎操作</li>
-            <li>清洗过程不会修改原始交易描述和金额</li>
-          </ul>
-        </el-alert>
-      </div>
-      <template #footer>
-        <el-button @click="showBatchCleanDialog = false">取消</el-button>
-        <el-button type="success" @click="executeBatchClean" :loading="batchSubmitting">确定清洗</el-button>
-      </template>
-    </el-dialog>
-
     <!-- 新增/编辑弹窗 -->
     <el-dialog
       v-model="dialogVisible"
@@ -838,12 +807,11 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete, RefreshRight, Plus, Download } from '@element-plus/icons-vue'
+import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete, Plus, Download } from '@element-plus/icons-vue'
 import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills, exportBills } from '@/api/bill'
 import { getTagList } from '@/api/tag'
 import { getCategoryList } from '@/api/category'
 import { listPaymentChannels } from '@/api/paymentChannel'
-import { batchCleanBills } from '@/api/dataCleanRule'
 import request from '@/utils/request'
 
 // 列设置 - 所有可用列
@@ -1473,7 +1441,6 @@ const showBatchCategory = ref(false)
 const showBatchRemark = ref(false)
 const showBatchTag = ref(false)
 const showBatchStatistics = ref(false)
-const showBatchCleanDialog = ref(false)
 
 // 批量提交状态
 const batchSubmitting = ref(false)
@@ -1633,40 +1600,6 @@ const handleBatchUpdate = async (type) => {
   } catch (error) {
     console.error('批量更新失败:', error)
     ElMessage.error(error.message || '批量更新失败')
-  } finally {
-    batchSubmitting.value = false
-  }
-}
-
-// 批量数据清洗
-const handleBatchClean = () => {
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning('请选择要清洗的账单')
-    return
-  }
-  showBatchCleanDialog.value = true
-}
-
-// 执行批量清洗
-const executeBatchClean = async () => {
-  try {
-    batchSubmitting.value = true
-    
-    console.log('开始批量清洗，账单 ID:', selectedRows.value)
-    
-    // 调用批量清洗接口
-    const res = await batchCleanBills(selectedRows.value)
-    
-    const successCount = res.data || 0
-    ElMessage.success(`成功清洗 ${successCount} 条账单`)
-    showBatchCleanDialog.value = false
-    
-    // 重新加载数据
-    loadData()
-    loadStatistics()
-  } catch (error) {
-    console.error('批量清洗失败:', error)
-    ElMessage.error(error.message || '批量清洗失败')
   } finally {
     batchSubmitting.value = false
   }

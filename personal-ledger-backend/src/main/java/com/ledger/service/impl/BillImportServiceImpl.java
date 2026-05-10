@@ -217,6 +217,48 @@ public class BillImportServiceImpl implements BillImportService {
         detectDuplicatesBeforeConvert(details);
 
         // 4. 批量创建账单
+        batchConvertDetailsToBills(details);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer convertAllQualified(Long importRecordId) {
+        // 1. 查询所有满足条件的明细记录
+        LambdaQueryWrapper<BillImportDetail> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(BillImportDetail::getImportRecordId, importRecordId)
+                .eq(BillImportDetail::getImportStatus, "SUCCESS")
+                .eq(BillImportDetail::getDuplicateStatus, "UNIQUE")
+                .eq(BillImportDetail::getConvertStatus, "PENDING");
+        
+        List<BillImportDetail> details = importDetailMapper.selectList(wrapper);
+        
+        if (details.isEmpty()) {
+            log.info("导入记录 {} 没有满足条件的明细需要转换", importRecordId);
+            return 0;
+        }
+        
+        log.info("导入记录 {} 找到 {} 条满足条件的明细，开始批量转换", importRecordId, details.size());
+        
+        // 2. 转换前再次检查重复（防止导入后有新账单创建）
+        detectDuplicatesBeforeConvert(details);
+        
+        // 3. 批量创建账单
+        int successCount = batchConvertDetailsToBills(details);
+        
+        log.info("导入记录 {} 批量转换完成，成功转换 {} 条记录", importRecordId, successCount);
+        
+        return successCount;
+    }
+
+    /**
+     * 批量转换明细为账单
+     * 
+     * @param details 待转换的明细列表
+     * @return 成功转换的记录数
+     */
+    private int batchConvertDetailsToBills(List<BillImportDetail> details) {
+        int successCount = 0;
+        
         for (BillImportDetail detail : details) {
             // 跳过重复记录
             if ("DUPLICATE".equals(detail.getConvertStatus())) {
@@ -236,6 +278,8 @@ public class BillImportServiceImpl implements BillImportService {
                 detail.setLedgerId(bill.getId());
                 importDetailMapper.updateById(detail);
                 log.info("明细状态更新成功");
+                
+                successCount++;
 
             } catch (Exception e) {
                 log.error("转换账单失败, 明细ID: {}", detail.getId(), e);
@@ -244,6 +288,8 @@ public class BillImportServiceImpl implements BillImportService {
                 importDetailMapper.updateById(detail);
             }
         }
+        
+        return successCount;
     }
 
     @Override
