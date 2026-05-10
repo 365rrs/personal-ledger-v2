@@ -1407,6 +1407,11 @@ const handleSubmit = async () => {
       const parent = categoryList.value.find(cat => cat.id === form.categoryId)
       if (parent) {
         categoryName = parent.categoryName
+        
+        // 如果该分类没有二级分类，强制清空 subCategoryId
+        if (!parent.children || parent.children.length === 0) {
+          form.subCategoryId = null
+        }
       }
     }
     
@@ -1599,12 +1604,21 @@ const handleBatchUpdate = async (type) => {
         const parent = categoryList.value.find(cat => cat.id === batchForms.category.categoryId)
         if (parent) {
           data.category = parent.categoryName
+          
+          // 如果该分类没有二级分类，强制清空 subCategoryId
+          if (!parent.children || parent.children.length === 0) {
+            data.subCategoryId = null
+            batchForms.category.subCategoryId = null
+          }
         }
         if (batchForms.category.subCategoryId) {
           const subCat = batchSubCategoryList.value.find(sub => sub.id === batchForms.category.subCategoryId)
           if (subCat) {
             data.subCategory = subCat.categoryName
           }
+        } else {
+          // 明确设置为空字符串，确保后端清空二级分类
+          data.subCategory = ''
         }
         data.updateFields.push('categoryId')
         break
