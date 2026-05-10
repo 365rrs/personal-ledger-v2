@@ -36,7 +36,20 @@
           </el-radio-group>
         </div>
         
-        <!-- 第二行：日期范围 -->
+        <!-- 第二行：月份选择 -->
+        <div style="margin-bottom: 12px;">
+          <span style="margin-right: 12px;">选择月份：</span>
+          <el-date-picker
+            v-model="selectedMonth"
+            type="month"
+            placeholder="选择月份"
+            value-format="YYYY-MM"
+            @change="handleMonthChange"
+            style="width: 200px;"
+          />
+        </div>
+        
+        <!-- 第三行：日期范围 -->
         <div style="margin-bottom: 12px;">
           <span style="margin-right: 12px;">日期范围：</span>
           <el-date-picker
@@ -50,7 +63,7 @@
           />
         </div>
         
-        <!-- 第三行：收支类型 + 是否计入收支 + 分类 + 二级分类 -->
+        <!-- 第四行：收支类型 + 是否计入收支 + 分类 + 二级分类 -->
         <div style="margin-bottom: 12px;">
           <span style="margin-right: 12px;">收支类型：</span>
           <el-select v-model="queryForm.amountType" placeholder="全部" clearable style="width: 120px; margin-right: 12px;">
@@ -909,6 +922,7 @@ const queryForm = reactive({
 })
 
 const dateRange = ref([])
+const selectedMonth = ref('') // 选择的月份
 const quickDate = ref('month') // 快捷日期选择，默认为本月
 const showAdvancedSearch = ref(false) // 是否显示高级搜索
 
@@ -1098,9 +1112,34 @@ const handleDateChange = (val) => {
     queryForm.startDate = val[0]
     queryForm.endDate = val[1]
     quickDate.value = 'custom'  // 手动选择日期时，切换到自定义
+    selectedMonth.value = ''  // 清空月份选择
   } else {
     queryForm.startDate = ''
     queryForm.endDate = ''
+  }
+}
+
+// 月份选择变化
+const handleMonthChange = (val) => {
+  if (val) {
+    // 解析年月
+    const [year, month] = val.split('-')
+    // 计算该月的第一天和最后一天
+    const firstDay = new Date(year, month - 1, 1)
+    const lastDay = new Date(year, month, 0)
+    
+    const startDate = formatDate(firstDay)
+    const endDate = formatDate(lastDay)
+    
+    // 更新日期范围
+    queryForm.startDate = startDate
+    queryForm.endDate = endDate
+    dateRange.value = [startDate, endDate]
+    
+    // 清空快捷日期选择
+    quickDate.value = 'custom'
+  } else {
+    // 清空月份选择时，不清空日期范围
   }
 }
 
@@ -1112,9 +1151,13 @@ const handleQuickDateChange = (value) => {
       queryForm.startDate = ''
       queryForm.endDate = ''
       dateRange.value = []
+      selectedMonth.value = ''  // 清空月份选择
     }
     return
   }
+  
+  // 清空月份选择
+  selectedMonth.value = ''
   
   const today = new Date()
   let startDate = ''
