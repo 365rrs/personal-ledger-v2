@@ -120,8 +120,23 @@ public class BillCategoryServiceImpl implements BillCategoryService {
             throw new BusinessException("该分类下有子分类，请先删除子分类");
         }
 
-        // TODO: 检查是否有账单使用该分类
-        // 这里需要查询 bill 表的 category 和 sub_category 字段
+        // 检查是否有账单使用该分类
+        LambdaQueryWrapper<Bill> billQuery = new LambdaQueryWrapper<>();
+        
+        // 判断是一级分类还是二级分类
+        if (category.getParentId() == null) {
+            // 一级分类：检查 category_id 字段
+            billQuery.eq(Bill::getCategoryId, id);
+        } else {
+            // 二级分类：检查 sub_category_id 字段
+            billQuery.eq(Bill::getSubCategoryId, id);
+        }
+        
+        Long billCount = billMapper.selectCount(billQuery);
+        if (billCount > 0) {
+            String categoryLevel = category.getParentId() == null ? "一级" : "二级";
+            throw new BusinessException(String.format("该%s分类已被 %d 条账单使用，无法删除", categoryLevel, billCount));
+        }
 
         // 逻辑删除
         billCategoryMapper.deleteById(id);
