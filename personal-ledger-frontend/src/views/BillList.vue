@@ -821,7 +821,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete, Plus, Download } from '@element-plus/icons-vue'
-import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills, exportBills } from '@/api/bill'
+import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills, exportBills, getBill } from '@/api/bill'
 import { getTagList } from '@/api/tag'
 import { getCategoryList } from '@/api/category'
 import { listPaymentChannels } from '@/api/paymentChannel'
@@ -1346,52 +1346,66 @@ const handleCreate = () => {
 }
 
 // 编辑
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   dialogTitle.value = '编辑账单'
-  isEditMode.value = true // 设置为编辑模式
+  isEditMode.value = true
   dialogVisible.value = true
-  Object.assign(form, {
-    id: row.id,
-    amountType: row.amountType,
-    transactionType: row.transactionType,
-    amount: row.amountType === 'INCOME' ? row.incomeAmount : row.expenseAmount,
-    categoryId: row.categoryId,
-    subCategoryId: row.subCategoryId,
-    transactionDate: row.transactionDate,
-    transactionTime: row.transactionTime,
-    paymentChannel: row.paymentChannel,
-    paymentChannelId: row.paymentChannelId || null,  // 新增：支付渠道 ID
-    transactionDesc: row.transactionDesc,
-    manualRemark: row.manualRemark,
-    includeInStatistics: row.includeInStatistics,
-    tagIds: row.tagIds || [],  // 加载标签
-    manualEntry: row.manualEntry || '0'  // 加载是否手工记账
-  })
+  try {
+    const res = await getBill(row.id)
+    const data = res.data
+    Object.assign(form, {
+      id: data.id,
+      amountType: data.amountType,
+      transactionType: data.transactionType,
+      amount: data.amountType === 'INCOME' ? data.incomeAmount : data.expenseAmount,
+      categoryId: data.categoryId,
+      subCategoryId: data.subCategoryId,
+      transactionDate: data.transactionDate,
+      transactionTime: data.transactionTime,
+      paymentChannel: data.paymentChannel,
+      paymentChannelId: data.paymentChannelId || null,
+      transactionDesc: data.transactionDesc,
+      manualRemark: data.manualRemark,
+      includeInStatistics: data.includeInStatistics,
+      tagIds: data.tagIds || [],
+      manualEntry: data.manualEntry || '0'
+    })
+  } catch (error) {
+    ElMessage.error('加载账单详情失败')
+    dialogVisible.value = false
+  }
 }
 
 // 查看
-const handleView = (row) => {
+const handleView = async (row) => {
   dialogTitle.value = '账单详情'
-  isViewMode.value = true // 设置为查看模式
-  isEditMode.value = false // 确保编辑模式为 false
+  isViewMode.value = true
+  isEditMode.value = false
   dialogVisible.value = true
-  Object.assign(form, {
-    id: row.id,
-    amountType: row.amountType,
-    transactionType: row.transactionType,
-    amount: row.amountType === 'INCOME' ? row.incomeAmount : row.expenseAmount,
-    categoryId: row.categoryId,
-    subCategoryId: row.subCategoryId,
-    transactionDate: row.transactionDate,
-    transactionTime: row.transactionTime,
-    paymentChannel: row.paymentChannel,
-    paymentChannelId: row.paymentChannelId || null,  // 新增：支付渠道 ID
-    transactionDesc: row.transactionDesc,
-    manualRemark: row.manualRemark,
-    includeInStatistics: row.includeInStatistics,
-    manualEntry: row.manualEntry,
-    tagIds: row.tagIds || []  // 加载标签 ID
-  })
+  try {
+    const res = await getBill(row.id)
+    const data = res.data
+    Object.assign(form, {
+      id: data.id,
+      amountType: data.amountType,
+      transactionType: data.transactionType,
+      amount: data.amountType === 'INCOME' ? data.incomeAmount : data.expenseAmount,
+      categoryId: data.categoryId,
+      subCategoryId: data.subCategoryId,
+      transactionDate: data.transactionDate,
+      transactionTime: data.transactionTime,
+      paymentChannel: data.paymentChannel,
+      paymentChannelId: data.paymentChannelId || null,
+      transactionDesc: data.transactionDesc,
+      manualRemark: data.manualRemark,
+      includeInStatistics: data.includeInStatistics,
+      manualEntry: data.manualEntry,
+      tagIds: data.tagIds || []
+    })
+  } catch (error) {
+    ElMessage.error('加载账单详情失败')
+    dialogVisible.value = false
+  }
 }
 
 // 提交
@@ -1401,7 +1415,7 @@ const handleSubmit = async () => {
     
     // 根据 categoryId 查找分类名称
     let categoryName = ''
-    let subCategoryName = ''
+    let subCategoryName = null  // 改为 null，保持与 subCategoryId 一致
     
     if (form.categoryId) {
       const parent = categoryList.value.find(cat => cat.id === form.categoryId)
@@ -1434,7 +1448,7 @@ const handleSubmit = async () => {
       categoryId: form.categoryId,
       category: categoryName,  // 同时传递分类名称
       subCategoryId: form.subCategoryId,
-      subCategory: subCategoryName,  // 同时传递二级分类名称
+      subCategory: subCategoryName,  // 同时传递二级分类名称（null 或实际名称）
       paymentChannel: form.paymentChannel,
       paymentChannelId: form.paymentChannelId,  // 新增：支付渠道 ID
       transactionDesc: form.transactionDesc,
@@ -1617,8 +1631,8 @@ const handleBatchUpdate = async (type) => {
             data.subCategory = subCat.categoryName
           }
         } else {
-          // 明确设置为空字符串，确保后端清空二级分类
-          data.subCategory = ''
+          // 明确设置为 null，确保后端清空二级分类
+          data.subCategory = null
         }
         data.updateFields.push('categoryId')
         break

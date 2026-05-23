@@ -198,6 +198,7 @@ public class BillServiceImpl implements BillService {
                 if (dto.getUpdateFields().contains("categoryId")) {
                     bill.setCategoryId(dto.getCategoryId());
                     bill.setCategory(dto.getCategory());
+                    // 明确更新二级分类，即使为 null 也要更新
                     bill.setSubCategoryId(dto.getSubCategoryId());
                     bill.setSubCategory(dto.getSubCategory());
                 }
@@ -210,8 +211,31 @@ public class BillServiceImpl implements BillService {
                     bill.setIncludeInStatistics(dto.getIncludeInStatistics());
                 }
                 
-                // 更新账单
-                billMapper.updateById(bill);
+                // 使用 UpdateWrapper 明确更新所有字段，包括 null 值
+                com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<Bill> updateWrapper = 
+                    new com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<>();
+                updateWrapper.eq("id", billId);
+                
+                if (dto.getUpdateFields().contains("paymentChannel")) {
+                    updateWrapper.set("payment_channel", dto.getPaymentChannel());
+                }
+                
+                if (dto.getUpdateFields().contains("categoryId")) {
+                    updateWrapper.set("category_id", dto.getCategoryId());
+                    updateWrapper.set("category", dto.getCategory());
+                    updateWrapper.set("sub_category_id", dto.getSubCategoryId());
+                    updateWrapper.set("sub_category", dto.getSubCategory());
+                }
+                
+                if (dto.getUpdateFields().contains("manualRemark")) {
+                    updateWrapper.set("manual_remark", dto.getManualRemark());
+                }
+                
+                if (dto.getUpdateFields().contains("includeInStatistics")) {
+                    updateWrapper.set("include_in_statistics", dto.getIncludeInStatistics());
+                }
+                
+                billMapper.update(null, updateWrapper);
                 
                 // 处理标签关联关系（如果提供了标签 ID 列表且在更新字段中）
                 if (dto.getUpdateFields().contains("tagIds") && dto.getTagIds() != null) {
