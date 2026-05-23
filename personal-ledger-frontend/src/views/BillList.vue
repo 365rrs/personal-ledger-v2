@@ -82,13 +82,15 @@
             v-model="queryForm.categoryId" 
             placeholder="请选择分类" 
             filterable
+            remote
+            :remote-method="remoteCategorySearch"
             clearable
             @change="handleCategoryChange"
             style="width: 150px; margin-right: 12px;"
             popper-class="category-select-dropdown"
           >
             <el-option
-              v-for="cat in categoryList"
+              v-for="cat in filteredCategoryList"
               :key="cat.id"
               :label="cat.categoryName"
               :value="cat.id"
@@ -523,13 +525,15 @@
             v-model="batchForms.category.categoryId" 
             placeholder="请选择分类" 
             filterable
+            remote
+            :remote-method="remoteCategorySearch"
             clearable
             @change="handleBatchCategoryChange"
             style="width: 100%;"
             popper-class="category-select-dropdown"
           >
             <el-option
-              v-for="cat in categoryList"
+              v-for="cat in filteredCategoryList"
               :key="cat.id"
               :label="cat.categoryName"
               :value="cat.id"
@@ -674,6 +678,8 @@
             v-model="form.categoryId" 
             placeholder="请选择分类" 
             filterable
+            remote
+            :remote-method="remoteCategorySearch"
             clearable
             @change="handleFormCategoryChange"
             :disabled="isViewMode"
@@ -681,7 +687,7 @@
             popper-class="category-select-dropdown"
           >
             <el-option
-              v-for="cat in categoryList"
+              v-for="cat in filteredCategoryList"
               :key="cat.id"
               :label="cat.categoryName"
               :value="cat.id"
@@ -826,6 +832,7 @@ import { getTagList } from '@/api/tag'
 import { getCategoryList } from '@/api/category'
 import { listPaymentChannels } from '@/api/paymentChannel'
 import request from '@/utils/request'
+import { pinyin } from 'pinyin-pro'
 
 // 列设置 - 所有可用列
 const allColumns = [
@@ -943,6 +950,9 @@ const tagList = ref([])
 // 分类列表
 const categoryList = ref([])
 
+// 过滤后的分类列表（用于显示）
+const filteredCategoryList = ref([])
+
 // 支付渠道列表
 const paymentChannelList = ref([])
 
@@ -964,6 +974,7 @@ const loadCategoryList = async () => {
   try {
     const res = await getCategoryList('', '')  // 获取所有分类
     categoryList.value = (res.data || []).filter(cat => !cat.parentId)  // 只取一级分类
+    filteredCategoryList.value = categoryList.value  // 初始化过滤列表
   } catch (error) {
     console.error('加载分类列表失败:', error)
   }
@@ -984,6 +995,39 @@ const loadPaymentChannelList = async () => {
 const getEnabledTagList = computed(() => {
   return tagList.value.filter(tag => tag.tagStatus === 'enable')
 })
+
+// 分类远程搜索方法
+const remoteCategorySearch = (query) => {
+  if (!query) {
+    filteredCategoryList.value = categoryList.value
+    return
+  }
+  
+  const queryLower = query.toLowerCase()
+  
+  filteredCategoryList.value = categoryList.value.filter(category => {
+    const categoryName = category.categoryName || ''
+    
+    // 支持中文名称匹配
+    if (categoryName.toLowerCase().includes(queryLower)) {
+      return true
+    }
+    
+    // 支持拼音全拼匹配
+    const fullPinyin = pinyin(categoryName, { toneType: 'none', type: 'array' }).join('').toLowerCase()
+    if (fullPinyin.includes(queryLower)) {
+      return true
+    }
+    
+    // 支持拼音首字母匹配
+    const firstLetters = pinyin(categoryName, { pattern: 'first', toneType: 'none', type: 'array' }).join('').toLowerCase()
+    if (firstLetters.includes(queryLower)) {
+      return true
+    }
+    
+    return false
+  })
+}
 
 // 当前分类下的二级分类列表
 const currentSubCategoryList = computed(() => {
