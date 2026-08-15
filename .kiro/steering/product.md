@@ -6,19 +6,92 @@ A personal finance management system for tracking income and expenses with compr
 
 ## Core Features
 
-- **Bill Management**: Record and manage income/expense transactions manually or via import
-- **Category Management**: Organize transactions with customizable categories and sub-categories
-- **Tag System**: Flexible tagging for transaction organization
-- **Payment Channels**: Track transactions across different payment methods
-- **Data Import**: Bulk import bills from CSV/Excel files with duplicate detection
-- **Data Cleaning**: Automated rules engine for cleaning and normalizing imported data
-- **Statistics & Analytics**: Multi-dimensional analysis of spending patterns and trends
-- **Daily Balance Tracking**: Monitor daily financial position
+### 1. 账单管理 (Bill Management)
+- 手动录入和编辑账单信息
+- 支持收入/支出类型记录
+- 批量更新和批量跳过功能
+- 拼音搜索支持（分类快速检索）
+- 账单导出功能（导出为 Excel 或钱迹格式）
+- 与分类、标签、支付渠道的关联管理
+
+### 2. 账单分类管理 (Category Management)
+- 二级分类体系（主分类 + 子分类）
+- 支持自定义排序（拖拽排序）
+- 分类统计分析（支出金额、占比）
+- 是否计入统计的开关控制
+- 分类图标和颜色自定义
+
+### 3. 标签管理 (Tag System)
+- 灵活的多标签系统
+- 标签启用/禁用状态管理
+- 标签与账单多对多关联
+- 支持标签批量操作
+
+### 4. 支付渠道管理 (Payment Channels)
+- 支付方式配置（微信、支付宝、银行卡等）
+- 渠道图标和说明
+- 支付渠道统计分析
+
+### 5. 账单导入功能 (Data Import)
+- 支持 CSV/Excel 文件批量导入
+- 导入预览和数据验证
+- 数据指纹防重复导入（基于交易日期、金额、描述）
+- 导入记录追踪（导入历史、详情查看）
+- 导入数据清洗（自动规范化）
+- 导入统计（成功/失败/跳过数量）
+
+### 6. 数据清洗规则引擎 (Data Cleaning)
+- 基于正则表达式的规则匹配
+- 自动提取和清洗账单描述
+- 自动分类和支付渠道识别
+- 规则优先级管理
+- 规则启用/禁用控制
+- 支持规则测试和验证
+
+### 7. 统计分析 (Statistics & Analytics)
+- **每日支出统计**: 日维度支出趋势分析
+- **每月支出统计**: 月维度支出对比
+- **累计支出统计**: 累计趋势和同期对比
+- **分类统计分析**: 按分类维度的支出占比和排名
+- **大额支出分析**: 大额交易识别和追踪
+- **每日结余统计**: 日常收支平衡监控
+- **可视化图表**: 基于 ECharts 的多维度数据可视化
+
+### 8. 数据导出与转换 (Export & Conversion)
+- 账单数据导出为 Excel
+- **钱迹格式导出**: 一键转换为钱迹 APP 导入格式
+- 支持自定义导出字段和格式
 
 ## Key Characteristics
 
-- Supports both manual entry and bulk import workflows
-- Distinguishes between manually entered and imported data
-- Includes data fingerprinting for duplicate detection
-- Logical deletion for all records (no physical deletes)
-- Comprehensive audit trail with creator/updater tracking
+### 数据完整性
+- 所有删除操作均为逻辑删除（软删除）
+- 完整的审计日志（创建人、更新人、时间戳）
+- 数据指纹机制防止重复导入
+- 区分手动录入和导入数据来源
+
+### 用户体验
+- 拼音搜索支持中文快速检索
+- 拖拽排序支持直观的顺序调整
+- 批量操作提升效率
+- 响应式设计，支持局域网访问
+
+### 数据处理能力
+- 支持大批量数据导入
+- 自动化数据清洗和规范化
+- 多维度统计分析
+- 灵活的规则引擎
+
+### 扩展性
+- 模块化设计，易于功能扩展
+- 清晰的分层架构
+- RESTful API 设计
+- 完善的 Swagger 文档
+
+## Business Value
+
+- **时间节省**: 批量导入和自动清洗减少手动录入工作
+- **数据准确**: 指纹去重和规则验证确保数据质量
+- **决策支持**: 多维度统计分析帮助理解消费习惯
+- **灵活定制**: 自定义分类、标签、规则满足个性化需求
+- **数据迁移**: 支持导出到钱迹等第三方工具
