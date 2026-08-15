@@ -1,6 +1,11 @@
--- 用途：个人账本系统数据库表结构
+-- ============================================
+-- 个人账本系统数据库表结构
+-- ============================================
+-- 用途：个人账本系统完整数据库架构
 -- 作者：personal-ledger
 -- 日期：2025-01-13
+-- 更新：2026-08-15（根据数据库实际 DDL 校准）
+-- ============================================
 
 -- 创建数据库
 CREATE DATABASE IF NOT EXISTS personal_ledger_v2 
@@ -75,11 +80,11 @@ CREATE TABLE IF NOT EXISTS bill_import_detail (
 -- 3. bill（账单表）
 -- ============================================
 CREATE TABLE IF NOT EXISTS bill (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键 ID',
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     transaction_date DATE NOT NULL COMMENT '交易日期',
     transaction_time TIME COMMENT '交易时间',
-    income_amount DECIMAL(10, 2) DEFAULT 0.00 COMMENT '收入金额',
-    expense_amount DECIMAL(10, 2) DEFAULT 0.00 COMMENT '支出金额',
+    income_amount DECIMAL(10, 2) COMMENT '收入金额',
+    expense_amount DECIMAL(10, 2) COMMENT '支出金额',
     amount_type VARCHAR(20) NOT NULL DEFAULT 'EXPENSE' COMMENT '金额类型：INCOME-收入，EXPENSE-支出',
     transaction_type VARCHAR(100) COMMENT '交易类型（原始值）',
     transaction_desc VARCHAR(500) COMMENT '交易描述',
@@ -92,7 +97,7 @@ CREATE TABLE IF NOT EXISTS bill (
     manual_remark VARCHAR(500) COMMENT '手工备注',
     include_in_statistics VARCHAR(1) NOT NULL DEFAULT '1' COMMENT '是否计入收支统计：0-不计入，1-计入',
     manual_entry VARCHAR(1) NOT NULL DEFAULT '0' COMMENT '是否手工记账：0-否，1-是',
-    data_hash VARCHAR(64) COMMENT '数据指纹（用于重复检测）',
+    data_hash VARCHAR(64) NOT NULL COMMENT '数据指纹（用于重复检测）',
     creator_code VARCHAR(50) COMMENT '创建人编码',
     updater_code VARCHAR(50) COMMENT '更新人编码',
     creator_name VARCHAR(50) COMMENT '创建人姓名',
@@ -100,19 +105,19 @@ CREATE TABLE IF NOT EXISTS bill (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted VARCHAR(1) DEFAULT '0' COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    INDEX idx_category_id (category_id),
-    INDEX idx_create_time (create_time),
-    INDEX idx_data_hash (data_hash),
-    INDEX idx_sub_category_id (sub_category_id),
     INDEX idx_transaction_date (transaction_date),
-    INDEX idx_transaction_type (transaction_type)
+    INDEX idx_category_id (category_id),
+    INDEX idx_sub_category_id (sub_category_id),
+    INDEX idx_transaction_type (transaction_type),
+    INDEX idx_data_hash (data_hash),
+    INDEX idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账单表';
 
 -- ============================================
 -- 4. bill_tag（标签表）
 -- ============================================
 CREATE TABLE IF NOT EXISTS bill_tag (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键 ID',
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     tag_name VARCHAR(50) NOT NULL COMMENT '标签名称',
     tag_category VARCHAR(50) COMMENT '标签分类',
     tag_color VARCHAR(20) COMMENT '标签颜色',
@@ -143,7 +148,6 @@ CREATE TABLE IF NOT EXISTS bill_tag_relation (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted VARCHAR(1) DEFAULT '0' COMMENT '逻辑删除标识：0-未删除，1-已删除',
-    UNIQUE KEY uk_bill_tag (bill_id, tag_id),
     INDEX idx_bill_id (bill_id),
     INDEX idx_tag_id (tag_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账单标签关联表';
@@ -216,3 +220,33 @@ CREATE TABLE IF NOT EXISTS bill_data_clean_rule (
     INDEX idx_rule_type (rule_type),
     INDEX idx_enabled (enabled)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据清洗规则表';
+
+-- ============================================
+-- 表结构说明
+-- ============================================
+-- 
+-- 1. bill_import_record: 导入任务总记录
+-- 2. bill_import_detail: 导入数据明细（每一行数据）
+-- 3. bill: 账单主表（最终转换后的账单数据）
+-- 4. bill_tag: 标签定义表
+-- 5. bill_tag_relation: 账单-标签多对多关系
+-- 6. bill_category: 分类表（支持二级分类）
+-- 7. bill_payment_channel: 支付渠道表
+-- 8. bill_data_clean_rule: 数据清洗规则表
+--
+-- 设计原则：
+-- - 所有表都有审计字段（creator_code, creator_name, updater_code, updater_name）
+-- - 所有表都支持逻辑删除（deleted 字段）
+-- - 所有表都有创建时间和更新时间（create_time, update_time）
+-- - 关键查询字段都建立了索引
+-- - 使用 utf8mb4 字符集支持 Emoji 和特殊字符
+--
+-- 主要关系：
+-- - bill_import_record (1) -> (N) bill_import_detail
+-- - bill_import_detail (N) -> (1) bill（通过 ledger_id）
+-- - bill (N) <-> (N) bill_tag（通过 bill_tag_relation）
+-- - bill (N) -> (1) bill_category（分类）
+-- - bill (N) -> (1) bill_category（子分类）
+-- - bill (N) -> (1) bill_payment_channel
+--
+-- ============================================
