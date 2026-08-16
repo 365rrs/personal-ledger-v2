@@ -1,0 +1,58 @@
+package com.ledger.mybatis;
+
+import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+
+/**
+ * MyBatis Plus 元数据对象处理器
+ * 自动填充审计字段
+ *
+ * @author personal-ledger
+ * @date 2025-01-15
+ */
+@Slf4j
+@Component
+public class MyMetaObjectHandler implements MetaObjectHandler {
+
+    /**
+     * 插入时自动填充
+     */
+    @Override
+    public void insertFill(MetaObject metaObject) {
+        log.debug("开始插入填充...");
+        
+        // 自动填充创建时间
+        this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
+        
+        // 自动填充更新时间
+        this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+        
+        // 自动填充创建人编码（目前使用默认值，实际应该从登录用户获取）
+        this.strictInsertFill(metaObject, "creatorCode", String.class, "SYSTEM");
+        
+        // 自动填充创建人姓名（目前使用默认值，实际应该从登录用户获取）
+        this.strictInsertFill(metaObject, "creatorName", String.class, "系统管理员");
+    }
+
+    /**
+     * 更新时自动填充
+     */
+    @Override
+    public void updateFill(MetaObject metaObject) {
+        log.debug("开始更新填充...");
+        
+        // 自动填充更新时间
+        this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+        
+        // 自动填充更新人编码（目前使用默认值，实际应该从登录用户获取）
+        this.strictUpdateFill(metaObject, "updaterCode", String.class, "SYSTEM");
+        
+        // 自动填充更新人姓名（目前使用默认值，实际应该从登录用户获取）
+        this.strictUpdateFill(metaObject, "updaterName", String.class, "系统管理员");
+    }
+}
+

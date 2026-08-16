@@ -81,6 +81,16 @@ const routes = [
         path: 'monthly-cumulative-expense',
         name: 'MonthlyCumulativeExpense',
         component: () => import('../views/MonthlyCumulativeExpense.vue')
+      },
+      {
+        path: 'pending-expense',
+        name: 'PendingExpenseList',
+        component: () => import('../views/pending-expense/PendingExpenseList.vue')
+      },
+      {
+        path: 'pending-expense/statistics',
+        name: 'PendingExpenseStatistics',
+        component: () => import('../views/pending-expense/PendingExpenseStatistics.vue')
       }
     ]
   }

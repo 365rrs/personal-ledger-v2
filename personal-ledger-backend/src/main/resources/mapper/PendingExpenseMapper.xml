@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ledger.mapper.PendingExpenseMapper">
+    
+    <!-- 月度统计结果映射 -->
+    <resultMap id="MonthlyStatisticsResultMap" type="com.ledger.vo.PendingExpenseStatisticsVO$MonthlyStatistics">
+        <result column="yearMonth" jdbcType="VARCHAR" property="yearMonth"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="count" jdbcType="INTEGER" property="count"/>
+    </resultMap>
+    
+    <!-- 分类统计结果映射 -->
+    <resultMap id="CategoryStatisticsResultMap" type="com.ledger.vo.PendingExpenseStatisticsVO$CategoryStatistics">
+        <result column="category_id" jdbcType="BIGINT" property="categoryId"/>
+        <result column="category_name" jdbcType="VARCHAR" property="categoryName"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="count" jdbcType="INTEGER" property="count"/>
+    </resultMap>
+    
+    <!-- 周期统计结果映射 -->
+    <resultMap id="PeriodStatisticsResultMap" type="com.ledger.vo.PendingExpenseStatisticsVO$PeriodStatistics">
+        <result column="period" jdbcType="VARCHAR" property="period"/>
+        <result column="period_name" jdbcType="VARCHAR" property="periodName"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="count" jdbcType="INTEGER" property="count"/>
+    </resultMap>
+    
+    <!-- 计划类型统计结果映射 -->
+    <resultMap id="PlanTypeStatisticsResultMap" type="com.ledger.vo.PendingExpenseStatisticsVO$PlanTypeStatistics">
+        <result column="plan_type" jdbcType="VARCHAR" property="planType"/>
+        <result column="plan_type_name" jdbcType="VARCHAR" property="planTypeName"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="count" jdbcType="INTEGER" property="count"/>
+        <result column="percentage" jdbcType="DECIMAL" property="percentage"/>
+    </resultMap>
+    
+    <!-- 状态统计结果映射 -->
+    <resultMap id="StatusStatisticsResultMap" type="com.ledger.vo.PendingExpenseStatisticsVO$StatusStatistics">
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="status_name" jdbcType="VARCHAR" property="statusName"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="count" jdbcType="INTEGER" property="count"/>
+    </resultMap>
+    
+    <!-- 按月份统计待支出 -->
+    <select id="getMonthlyStatistics" resultMap="MonthlyStatisticsResultMap">
+        SELECT
+            DATE_FORMAT(payment_date, '%Y-%m') AS yearMonth,
+            COALESCE(SUM(amount), 0) AS amount,
+            COUNT(*) AS count
+        FROM pending_expense
+        WHERE deleted = '0'
+        AND status = 'PENDING'
+        <if test="year != null">
+        AND YEAR(payment_date) = #{year}
+        </if>
+        GROUP BY DATE_FORMAT(payment_date, '%Y-%m')
+        ORDER BY DATE_FORMAT(payment_date, '%Y-%m')
+    </select>
+    
+    <!-- 按分类统计待支出 -->
+    <select id="getCategoryStatistics" resultMap="CategoryStatisticsResultMap">
+        SELECT 
+            pe.category_id,
+            COALESCE(bc.category_name, '未分类') AS category_name,
+            COALESCE(SUM(pe.amount), 0) AS amount,
+            COUNT(*) AS count
+        FROM pending_expense pe
+        LEFT JOIN bill_category bc ON pe.category_id = bc.id AND bc.deleted = '0'
+        WHERE pe.deleted = '0'
+          AND pe.status = 'PENDING'
+        <if test="year != null">
+          AND YEAR(pe.payment_date) = #{year}
+        </if>
+        GROUP BY pe.category_id, bc.category_name
+        ORDER BY amount DESC
+    </select>
+    
+    <!-- 按周期统计待支出 -->
+    <select id="getPeriodStatistics" resultMap="PeriodStatisticsResultMap">
+        SELECT 
+            period,
+            CASE period
+                WHEN 'MONTHLY' THEN '每月'
+                WHEN 'YEARLY' THEN '每年'
+                WHEN 'ONETIME' THEN '一次性'
+                ELSE '未知'
+            END AS period_name,
+            COALESCE(SUM(amount), 0) AS amount,
+            COUNT(*) AS count
+        FROM pending_expense
+        WHERE deleted = '0'
+        <if test="year != null">
+        AND YEAR(payment_date) = #{year}
+        </if>
+        GROUP BY period
+        ORDER BY 
+            CASE period
+                WHEN 'MONTHLY' THEN 1
+                WHEN 'YEARLY' THEN 2
+                WHEN 'ONETIME' THEN 3
+                ELSE 4
+            END
+    </select>
+    
+    <!-- 按计划类型统计待支出 -->
+    <select id="getPlanTypeStatistics" resultMap="PlanTypeStatisticsResultMap">
+        SELECT 
+            plan_type,
+            CASE plan_type
+                WHEN 'RIGID' THEN '刚性支出'
+                WHEN 'INTENDED' THEN '意向计划支出'
+                ELSE '未知'
+            END AS plan_type_name,
+            COALESCE(SUM(amount), 0) AS amount,
+            COUNT(*) AS count,
+            NULL AS percentage
+        FROM pending_expense
+        WHERE deleted = '0'
+        <if test="year != null">
+        AND YEAR(payment_date) = #{year}
+        </if>
+        GROUP BY plan_type
+        ORDER BY 
+            CASE plan_type
+                WHEN 'RIGID' THEN 1
+                WHEN 'INTENDED' THEN 2
+                ELSE 3
+            END
+    </select>
+    
+    <!-- 按状态统计待支出 -->
+    <select id="getStatusStatistics" resultMap="StatusStatisticsResultMap">
+        SELECT 
+            status,
+            CASE status
+                WHEN 'PENDING' THEN '待支付'
+                WHEN 'COMPLETED' THEN '已完成'
+                WHEN 'CANCELLED' THEN '已取消'
+                ELSE '未知'
+            END AS status_name,
+            COALESCE(SUM(amount), 0) AS amount,
+            COUNT(*) AS count
+        FROM pending_expense
+        WHERE deleted = '0'
+        GROUP BY status
+        ORDER BY 
+            CASE status
+                WHEN 'PENDING' THEN 1
+                WHEN 'COMPLETED' THEN 2
+                WHEN 'CANCELLED' THEN 3
+                ELSE 4
+            END
+    </select>
+    
+</mapper>

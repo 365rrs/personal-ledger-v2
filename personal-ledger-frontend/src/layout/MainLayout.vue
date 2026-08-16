@@ -36,7 +36,16 @@
           <el-menu-item index="/category-statistics">分类统计</el-menu-item>
           <el-menu-item index="/large-expense">大额支出</el-menu-item>
         </el-sub-menu>
-        
+
+        <el-sub-menu index="pending-expense">
+          <template #title>
+            <el-icon><Calendar /></el-icon>
+            <span>待支出管理</span>
+          </template>
+          <el-menu-item index="/pending-expense">待支出列表</el-menu-item>
+          <el-menu-item index="/pending-expense/statistics">待支出统计</el-menu-item>
+        </el-sub-menu>
+
         <el-sub-menu index="settings">
           <template #title>
             <el-icon><Setting /></el-icon>
@@ -64,7 +73,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Tickets, DataAnalysis, Setting } from '@element-plus/icons-vue'
+import { HomeFilled, Tickets, DataAnalysis, Calendar, Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
@@ -84,7 +93,9 @@ const pageTitle = computed(() => {
     '/monthly-expense': '月度支出',
     '/monthly-cumulative-expense': '月度累计支出',
     '/category-statistics': '分类统计',
-    '/large-expense': '大额支出'
+    '/large-expense': '大额支出',
+    '/pending-expense': '待支出列表',
+    '/pending-expense/statistics': '待支出统计'
   }
   return titles[route.path] || '个人账本系统'
 })

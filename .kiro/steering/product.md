@@ -78,9 +78,8 @@ A personal finance management system for tracking income and expenses with compr
 
 ### 数据处理能力
 - 支持大批量数据导入
-- 自动化数据清洗和规范化
 - 多维度统计分析
-- 灵活的规则引擎
+- 数据指纹去重机制
 
 ### 扩展性
 - 模块化设计，易于功能扩展
