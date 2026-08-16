@@ -27,11 +27,6 @@ public class BillTagQueryDTO {
     private String tagName;
     
     /**
-     * 标签分类
-     */
-    private String tagCategory;
-    
-    /**
      * 状态：enable-启用，disable-停用
      */
     private String tagStatus;

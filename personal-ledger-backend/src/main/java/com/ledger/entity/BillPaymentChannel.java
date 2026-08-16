@@ -34,12 +34,6 @@ public class BillPaymentChannel extends BaseEntity {
     private String channelType;
     
     /**
-     * 图标
-     */
-    @TableField(value = "icon")
-    private String icon;
-    
-    /**
      * 是否启用：0-禁用，1-启用
      */
     @TableField(value = "enabled")

@@ -119,7 +119,6 @@ CREATE TABLE IF NOT EXISTS bill (
 CREATE TABLE IF NOT EXISTS bill_tag (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     tag_name VARCHAR(50) NOT NULL COMMENT '标签名称',
-    tag_category VARCHAR(50) COMMENT '标签分类',
     tag_color VARCHAR(20) COMMENT '标签颜色',
     sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
     tag_status VARCHAR(10) DEFAULT 'enable' COMMENT '状态：enable-启用，disable-停用',
@@ -160,7 +159,6 @@ CREATE TABLE IF NOT EXISTS bill_category (
     category_name VARCHAR(50) NOT NULL COMMENT '分类名称',
     category_type VARCHAR(20) NOT NULL COMMENT '分类类型：INCOME-收入分类，EXPENSE-支出分类',
     parent_id BIGINT COMMENT '父分类ID（二级分类使用）',
-    icon VARCHAR(50) COMMENT '图标',
     enabled VARCHAR(1) NOT NULL DEFAULT '1' COMMENT '是否启用：0-禁用，1-启用',
     sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
     creator_code VARCHAR(50) COMMENT '创建人编码',
@@ -183,7 +181,6 @@ CREATE TABLE IF NOT EXISTS bill_payment_channel (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     channel_name VARCHAR(50) NOT NULL COMMENT '渠道名称',
     channel_type VARCHAR(20) COMMENT '渠道类型：CASH-现金，BANK_CARD-银行卡，CREDIT_CARD-信用卡，E_WALLET-电子钱包，OTHER-其他',
-    icon VARCHAR(50) COMMENT '图标',
     enabled VARCHAR(1) NOT NULL DEFAULT '1' COMMENT '是否启用：0-禁用，1-启用',
     sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号',
     creator_code VARCHAR(50) COMMENT '创建人编码',

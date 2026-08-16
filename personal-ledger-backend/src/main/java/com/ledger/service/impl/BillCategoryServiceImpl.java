@@ -91,7 +91,6 @@ public class BillCategoryServiceImpl implements BillCategoryService {
 
         String oldCategoryName = exists.getCategoryName();
         exists.setCategoryName(dto.getCategoryName());
-        exists.setIcon(dto.getIcon());
         exists.setSortOrder(dto.getSortOrder());
 
         billCategoryMapper.updateById(exists);

@@ -4,7 +4,6 @@ create table bill_payment_channel
         primary key,
     channel_name varchar(50)                          not null comment '渠道名称',
     channel_type varchar(20)                          null comment '渠道类型：CASH-现金，BANK_CARD-银行卡，CREDIT_CARD-信用卡，E_WALLET-电子钱包，OTHER-其他',
-    icon         varchar(50)                          null comment '图标',
     enabled      varchar(1) default '1'               not null comment '是否启用：0-禁用，1-启用',
     sort_order   int        default 0                 not null comment '排序序号',
     creator_code varchar(50)                          null comment '创建人编码',

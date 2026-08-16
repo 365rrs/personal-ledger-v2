@@ -14,7 +14,6 @@ public class BillPaymentChannelVO {
     private Long id;
     private String channelName;
     private String channelType;
-    private String icon;
     private String enabled;
     private Integer sortOrder;
     private java.time.LocalDateTime createTime;

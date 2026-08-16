@@ -5,7 +5,6 @@ create table bill_category
     category_name varchar(50)                          not null comment '分类名称',
     category_type varchar(20)                          not null comment '分类类型：INCOME-收入分类，EXPENSE-支出分类',
     parent_id     bigint                               null comment '父分类ID（二级分类使用）',
-    icon          varchar(50)                          null comment '图标',
     enabled       varchar(1) default '1'               not null comment '是否启用：0-禁用，1-启用',
     sort_order    int        default 0                 not null comment '排序序号',
     creator_code  varchar(50)                          null comment '创建人编码',

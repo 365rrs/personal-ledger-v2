@@ -40,11 +40,6 @@ public class BillCategoryDTO implements Serializable {
     private Long parentId;
 
     /**
-     * 图标
-     */
-    private String icon;
-
-    /**
      * 排序序号
      */
     @NotNull(message = "排序序号不能为空")

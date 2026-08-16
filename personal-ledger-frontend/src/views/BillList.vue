@@ -167,7 +167,6 @@
                       style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
                     ></span>
                     <span>{{ tag.tagName }}</span>
-                    <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
                   </div>
                 </el-option>
               </el-select>
@@ -623,7 +622,6 @@
                   style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
                 ></span>
                 <span>{{ tag.tagName }}</span>
-                <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
               </div>
             </el-option>
           </el-select>
@@ -789,7 +787,6 @@
                     style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
                   ></span>
                   <span>{{ tag.tagName }}</span>
-                  <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
                 </div>
               </el-option>
             </template>
@@ -808,7 +805,6 @@
                     style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
                   ></span>
                   <span>{{ tag.tagName }}</span>
-                  <span v-if="tag.tagCategory" style="color: #8492a6; font-size: 13px">（{{ tag.tagCategory }}）</span>
                 </div>
               </el-option>
             </template>

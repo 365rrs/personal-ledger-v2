@@ -37,10 +37,6 @@ public class BillVO {
      */
     private String paymentChannelType;
     /**
-     * 支付渠道图标
-     */
-    private String paymentChannelIcon;
-    /**
      * 分类名称（兼容旧版本）
      */
     private String category;

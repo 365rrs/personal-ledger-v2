@@ -40,11 +40,6 @@ public class BillCategory extends BaseEntity {
     private Long parentId;
 
     /**
-     * 图标
-     */
-    private String icon;
-
-    /**
      * 是否启用：0-禁用，1-启用
      */
     private String enabled;
