@@ -40,7 +40,6 @@ public class BillTagServiceImpl implements BillTagService {
         
         LambdaQueryWrapper<BillTag> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(StringUtils.isNotBlank(dto.getTagName()), BillTag::getTagName, dto.getTagName())
-               .eq(StringUtils.isNotBlank(dto.getTagCategory()), BillTag::getTagCategory, dto.getTagCategory())
                .eq(StringUtils.isNotBlank(dto.getTagStatus()), BillTag::getTagStatus, dto.getTagStatus())
                .orderByAsc(BillTag::getSortOrder);
         

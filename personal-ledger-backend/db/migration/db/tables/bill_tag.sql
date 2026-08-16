@@ -3,7 +3,6 @@ create table bill_tag
     id           bigint auto_increment comment '主键ID'
         primary key,
     tag_name     varchar(50)                           not null comment '标签名称',
-    tag_category varchar(50)                           null comment '标签分类',
     tag_color    varchar(20)                           null comment '标签颜色',
     sort_order   int         default 0                 not null comment '排序序号',
     tag_status   varchar(10) default 'enable'          null comment '状态：enable-启用，disable-停用',

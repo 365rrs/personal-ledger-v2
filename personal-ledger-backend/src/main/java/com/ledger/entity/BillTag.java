@@ -22,11 +22,6 @@ public class BillTag extends BaseEntity {
     private String tagName;
 
     /**
-     * 标签分类
-     */
-    private String tagCategory;
-
-    /**
      * 标签颜色
      */
     private String tagColor;

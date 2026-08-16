@@ -21,14 +21,6 @@
             style="width: 200px"
           />
         </el-form-item>
-        <el-form-item label="标签分类">
-          <el-input 
-            v-model="queryForm.tagCategory" 
-            placeholder="请输入标签分类"
-            clearable
-            style="width: 150px"
-          />
-        </el-form-item>
         <el-form-item label="状态">
           <el-select 
             v-model="queryForm.tagStatus" 
@@ -60,8 +52,7 @@
             <el-icon class="drag-handle" style="cursor: move;"><Rank /></el-icon>
           </template>
         </el-table-column>
-        <el-table-column prop="tagName" label="标签名称" width="150" />
-        <el-table-column prop="tagCategory" label="分类" width="120" />
+        <el-table-column prop="tagName" label="标签名称" width="180" />
         <el-table-column prop="tagColor" label="颜色" width="100">
           <template #default="{ row }">
             <span 
@@ -112,20 +103,6 @@
         <el-form-item label="标签名称" prop="tagName">
           <el-input v-model="formData.tagName" placeholder="请输入标签名称" maxlength="50" />
         </el-form-item>
-        <el-form-item label="标签分类" prop="tagCategory">
-          <el-select 
-            v-model="formData.tagCategory" 
-            placeholder="请选择或输入分类"
-            allow-create
-            filterable
-            style="width: 100%"
-          >
-            <el-option label="时间类" value="时间类" />
-            <el-option label="场景类" value="场景类" />
-            <el-option label="重要程度" value="重要程度" />
-            <el-option label="频率类" value="频率类" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="标签颜色" prop="tagColor">
           <el-color-picker v-model="formData.tagColor" :predefine="colorPresets" />
         </el-form-item>
@@ -173,7 +150,6 @@ const queryForm = reactive({
   current: 1,
   size: 20,
   tagName: '',
-  tagCategory: '',
   tagStatus: ''
 })
 
@@ -191,7 +167,6 @@ const submitting = ref(false)
 const formData = ref({
   id: null,
   tagName: '',
-  tagCategory: '',
   tagColor: '#1890ff',
   sortOrder: 0
 })
@@ -323,7 +298,6 @@ const handleQuery = () => {
 const handleReset = () => {
   queryForm.current = 1
   queryForm.tagName = ''
-  queryForm.tagCategory = ''
   queryForm.tagStatus = ''
   fetchData()
 }
@@ -342,7 +316,6 @@ const handleEdit = async (row) => {
     formData.value = {
       id: res.data.id,
       tagName: res.data.tagName,
-      tagCategory: res.data.tagCategory || '',
       tagColor: res.data.tagColor || '#1890ff',
       sortOrder: res.data.sortOrder || 0
     }
@@ -484,7 +457,6 @@ const handleDialogClose = () => {
   formData.value = {
     id: null,
     tagName: '',
-    tagCategory: '',
     tagColor: '#1890ff',
     sortOrder: 0
   }
