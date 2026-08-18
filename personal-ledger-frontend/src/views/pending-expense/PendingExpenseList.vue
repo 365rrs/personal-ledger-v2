@@ -273,40 +273,13 @@
           </template>
         </el-table-column>
         
-        <el-table-column label="操作" width="300" align="center" fixed="right">
+        <el-table-column label="操作" width="140" align="center" fixed="right">
           <template #default="{ row }">
+            <el-button link type="primary" size="small" @click="handleView(row.id)" :icon="View">
+              查看
+            </el-button>
             <el-button link type="primary" size="small" @click="handleEdit(row.id)" :icon="Edit">
               编辑
-            </el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row.id)" :icon="Delete">
-              删除
-            </el-button>
-            <el-button 
-              v-if="row.status === 'PENDING'" 
-              link 
-              type="success" 
-              size="small" 
-              @click="handleMarkCompleted(row.id)"
-            >
-              标记已完成
-            </el-button>
-            <el-button 
-              v-if="row.status === 'PENDING'" 
-              link 
-              type="warning" 
-              size="small" 
-              @click="handleMarkCancelled(row.id)"
-            >
-              标记已取消
-            </el-button>
-            <el-button 
-              v-if="row.status === 'COMPLETED' || row.status === 'CANCELLED'" 
-              link 
-              type="info" 
-              size="small" 
-              @click="handleMarkPending(row.id)"
-            >
-              标记待支付
             </el-button>
           </template>
         </el-table-column>
@@ -332,6 +305,13 @@
       :mode="editMode"
       :edit-id="currentEditId"
       @success="handleDialogSuccess"
+    />
+    
+    <!-- 详情查看对话框 -->
+    <PendingExpenseDetailDialog
+      v-model="detailDialogVisible"
+      :detail-id="currentDetailId"
+      @edit="handleEdit"
     />
     
     <!-- 周期性支出批量创建对话框 -->
@@ -395,14 +375,11 @@ import {
   Select, 
   Close, 
   Delete, 
-  Edit 
+  Edit,
+  View
 } from '@element-plus/icons-vue'
 import {
   pagePendingExpenses,
-  deletePendingExpense,
-  markAsCompleted,
-  markAsCancelled,
-  markAsPending,
   batchMarkAsCompleted,
   batchMarkAsCancelled,
   batchDelete,
@@ -411,6 +388,7 @@ import {
 } from '@/api/pendingExpense'
 import { getCategoryList } from '@/api/category'
 import PendingExpenseEditDialog from './components/PendingExpenseEditDialog.vue'
+import PendingExpenseDetailDialog from './components/PendingExpenseDetailDialog.vue'
 import RecurringExpenseDialog from './components/RecurringExpenseDialog.vue'
 
 // 14.6 数据状态管理
@@ -442,6 +420,8 @@ const queryForm = reactive({
 const editDialogVisible = ref(false)
 const editMode = ref('create')
 const currentEditId = ref(null)
+const detailDialogVisible = ref(false)
+const currentDetailId = ref(null)
 const recurringDialogVisible = ref(false)
 const batchResultDialogVisible = ref(false)
 const batchResult = reactive({
@@ -672,63 +652,17 @@ const handleCreate = () => {
   editDialogVisible.value = true
 }
 
-// 14.7 编辑
+// 14.7 查看详情
+const handleView = (id) => {
+  currentDetailId.value = id
+  detailDialogVisible.value = true
+}
+
+// 14.7 编辑（删除、状态标记等操作已收敛到编辑弹窗内）
 const handleEdit = (id) => {
   editMode.value = 'edit'
   currentEditId.value = id
   editDialogVisible.value = true
-}
-
-// 14.7 删除
-const handleDelete = async (id) => {
-  try {
-    await ElMessageBox.confirm('确认删除该待支出项目吗？', '确认删除', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    await deletePendingExpense(id)
-    ElMessage.success('删除成功')
-    fetchData()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error(error.message || '删除失败')
-    }
-  }
-}
-
-// 14.7 标记已完成
-const handleMarkCompleted = async (id) => {
-  try {
-    await markAsCompleted(id)
-    ElMessage.success('标记成功')
-    fetchData()
-  } catch (error) {
-    ElMessage.error(error.message || '操作失败')
-  }
-}
-
-// 14.7 标记已取消
-const handleMarkCancelled = async (id) => {
-  try {
-    await markAsCancelled(id)
-    ElMessage.success('标记成功')
-    fetchData()
-  } catch (error) {
-    ElMessage.error(error.message || '操作失败')
-  }
-}
-
-// 14.7 标记待支付
-const handleMarkPending = async (id) => {
-  try {
-    await markAsPending(id)
-    ElMessage.success('标记成功')
-    fetchData()
-  } catch (error) {
-    ElMessage.error(error.message || '操作失败')
-  }
 }
 
 // 14.8 批量标记已完成

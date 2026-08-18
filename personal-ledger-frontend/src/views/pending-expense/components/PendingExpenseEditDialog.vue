@@ -6,6 +6,13 @@
     @close="handleClose"
   >
     <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
+      <el-form-item v-if="mode === 'edit'" label="当前状态">
+        <el-tag v-if="currentStatus" :type="getStatusTagType(currentStatus)" size="small">
+          {{ currentStatusName }}
+        </el-tag>
+        <span v-else>-</span>
+      </el-form-item>
+
       <el-form-item label="项目名称" prop="expenseName">
         <el-input 
           v-model="form.expenseName" 
@@ -85,18 +92,77 @@
     </el-form>
     
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="submitting">
-        {{ mode === 'create' ? '创建' : '保存' }}
-      </el-button>
+      <div class="dialog-footer">
+        <!-- 编辑模式下的扩展操作：状态标记、删除 -->
+        <div class="footer-left">
+          <template v-if="mode === 'edit'">
+            <el-button
+              v-if="currentStatus === 'PENDING'"
+              type="success"
+              plain
+              size="small"
+              :loading="statusLoading"
+              @click="handleMarkCompleted"
+            >
+              标记已完成
+            </el-button>
+            <el-button
+              v-if="currentStatus === 'PENDING'"
+              type="warning"
+              plain
+              size="small"
+              :loading="statusLoading"
+              @click="handleMarkCancelled"
+            >
+              标记已取消
+            </el-button>
+            <el-button
+              v-if="currentStatus === 'COMPLETED' || currentStatus === 'CANCELLED'"
+              type="info"
+              plain
+              size="small"
+              :loading="statusLoading"
+              @click="handleMarkPending"
+            >
+              标记待支付
+            </el-button>
+            <el-button
+              type="danger"
+              plain
+              size="small"
+              :icon="Delete"
+              :loading="deleting"
+              @click="handleDelete"
+            >
+              删除
+            </el-button>
+          </template>
+        </div>
+
+        <div class="footer-right">
+          <el-button @click="visible = false">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" :loading="submitting">
+            {{ mode === 'create' ? '创建' : '保存' }}
+          </el-button>
+        </div>
+      </div>
     </template>
   </el-dialog>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { createPendingExpense, updatePendingExpense, getPendingExpense } from '@/api/pendingExpense'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete } from '@element-plus/icons-vue'
+import {
+  createPendingExpense,
+  updatePendingExpense,
+  getPendingExpense,
+  deletePendingExpense,
+  markAsCompleted,
+  markAsCancelled,
+  markAsPending
+} from '@/api/pendingExpense'
 import { getCategoryList } from '@/api/category'
 
 const props = defineProps({
@@ -125,7 +191,11 @@ const dialogTitle = computed(() => {
 
 const formRef = ref()
 const submitting = ref(false)
+const statusLoading = ref(false)
+const deleting = ref(false)
 const categoryList = ref([])
+const currentStatus = ref('')
+const currentStatusName = ref('')
 
 const form = reactive({
   expenseName: '',
@@ -198,10 +268,71 @@ const loadEditData = async () => {
         categoryId: res.data.categoryId,
         remark: res.data.remark || ''
       })
+      currentStatus.value = res.data.status || ''
+      currentStatusName.value = res.data.statusName || ''
     } catch (error) {
       console.error('加载项目详情失败:', error)
       ElMessage.error('加载项目详情失败')
     }
+  }
+}
+
+// 状态标签类型
+const getStatusTagType = (status) => {
+  const typeMap = {
+    PENDING: 'warning',
+    COMPLETED: 'success',
+    CANCELLED: 'info'
+  }
+  return typeMap[status] || ''
+}
+
+// 统一处理状态标记
+const changeStatus = async (action, successTip) => {
+  statusLoading.value = true
+  try {
+    await action(props.editId)
+    ElMessage.success(successTip)
+    visible.value = false
+    emit('success')
+  } catch (error) {
+    ElMessage.error(error.message || '操作失败')
+  } finally {
+    statusLoading.value = false
+  }
+}
+
+// 标记已完成
+const handleMarkCompleted = () => changeStatus(markAsCompleted, '已标记为已完成')
+
+// 标记已取消
+const handleMarkCancelled = () => changeStatus(markAsCancelled, '已标记为已取消')
+
+// 标记待支付
+const handleMarkPending = () => changeStatus(markAsPending, '已标记为待支付')
+
+// 删除
+const handleDelete = async () => {
+  try {
+    await ElMessageBox.confirm('确认删除该待支出项目吗？', '确认删除', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+  } catch (e) {
+    return
+  }
+
+  deleting.value = true
+  try {
+    await deletePendingExpense(props.editId)
+    ElMessage.success('删除成功')
+    visible.value = false
+    emit('success')
+  } catch (error) {
+    ElMessage.error(error.message || '删除失败')
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -243,6 +374,8 @@ const handleClose = () => {
     categoryId: null,
     remark: ''
   })
+  currentStatus.value = ''
+  currentStatusName.value = ''
 }
 
 // 监听对话框打开
@@ -259,5 +392,17 @@ watch(visible, (val) => {
 <style scoped>
 .el-input-number {
   width: 100%;
+}
+
+.dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>
