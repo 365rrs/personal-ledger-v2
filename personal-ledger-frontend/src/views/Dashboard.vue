@@ -282,7 +282,8 @@ const statCards = computed(() => {
     },
     {
       key: 'expected',
-      title: '本月预计支出',
+      // title: '本月预计支出',
+      title: '支出 + 待支出',
       tip: '本月支出 + 本月待支出',
       text: `¥ ${formatAmount(totalExpectedExpense.value)}`,
       rate: calcRate(totalExpectedExpense.value, prevTotalExpectedExpense.value)

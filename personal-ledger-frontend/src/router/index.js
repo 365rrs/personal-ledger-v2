@@ -13,6 +13,11 @@ const routes = [
         component: () => import('../views/Dashboard.vue')
       },
       {
+        path: 'yearly-dashboard',
+        name: 'YearlyDashboard',
+        component: () => import('../views/YearlyDashboard.vue')
+      },
+      {
         path: 'category',
         name: 'Category',
         component: () => import('../views/Category.vue')
