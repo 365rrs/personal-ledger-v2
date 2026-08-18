@@ -142,6 +142,15 @@ export function getPendingAmountByQuery(data) {
   })
 }
 
+// 根据查询条件统计待支付笔数
+export function getPendingCountByQuery(data) {
+  return request({
+    url: '/pending-expense/statistics/pending-count',
+    method: 'post',
+    data
+  })
+}
+
 // 按月份统计
 export function getMonthlyStatistics(year) {
   return request({

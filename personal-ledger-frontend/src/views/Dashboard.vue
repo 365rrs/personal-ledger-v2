@@ -20,28 +20,40 @@
     </el-card>
 
     <!-- 核心指标卡 -->
-    <el-row :gutter="20" class="stat-row">
-      <el-col v-for="card in statCards" :key="card.key" :span="6">
-        <el-card class="stat-card" :class="card.key" shadow="hover">
-          <div class="stat-title">{{ card.title }}</div>
-          <div class="stat-value">{{ card.text }}</div>
-          <div class="stat-compare">
-            <template v-if="card.rate === null">
-              <span class="compare-none">上月无数据</span>
-            </template>
-            <template v-else>
-              <el-icon :class="card.rate >= 0 ? 'is-up' : 'is-down'">
-                <component :is="card.rate >= 0 ? Top : Bottom" />
-              </el-icon>
-              <span :class="card.rate >= 0 ? 'is-up' : 'is-down'">
-                {{ Math.abs(card.rate).toFixed(1) }}%
-              </span>
-              <span class="compare-label">较上月</span>
-            </template>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <div class="stat-row">
+      <el-card
+        v-for="card in statCards"
+        :key="card.key"
+        class="stat-card"
+        :class="card.key"
+        shadow="hover"
+      >
+        <div class="stat-title">
+          {{ card.title }}
+          <el-tooltip v-if="card.tip" :content="card.tip" placement="top">
+            <el-icon class="stat-tip"><QuestionFilled /></el-icon>
+          </el-tooltip>
+        </div>
+        <div class="stat-value">
+          {{ card.text }}
+          <span v-if="card.subText" class="stat-sub">{{ card.subText }}</span>
+        </div>
+        <div class="stat-compare">
+          <template v-if="card.rate === null">
+            <span class="compare-none">上月无数据</span>
+          </template>
+          <template v-else>
+            <el-icon :class="card.rate >= 0 ? 'is-up' : 'is-down'">
+              <component :is="card.rate >= 0 ? Top : Bottom" />
+            </el-icon>
+            <span :class="card.rate >= 0 ? 'is-up' : 'is-down'">
+              {{ Math.abs(card.rate).toFixed(1) }}%
+            </span>
+            <span class="compare-label">较上月</span>
+          </template>
+        </div>
+      </el-card>
+    </div>
 
     <!-- 每日支出 + 分类占比 -->
     <el-row :gutter="20" class="chart-row">
@@ -165,7 +177,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Refresh, Top, Bottom } from '@element-plus/icons-vue'
+import { Refresh, Top, Bottom, QuestionFilled } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import {
   getStatistics,
@@ -177,6 +189,7 @@ import {
 import {
   getTotalPendingAmount,
   getPendingAmountByQuery,
+  getPendingCountByQuery,
   pagePendingExpenses
 } from '@/api/pendingExpense'
 
@@ -206,7 +219,10 @@ const monthlyData = ref([])
 const recentBills = ref([])
 const pendingList = ref([])
 const pendingMonthAmount = ref(0)
+const pendingMonthCount = ref(0)
 const pendingYearAmount = ref(0)
+// 上月待支出金额，用于指标卡环比；上月无待支出数据时为 null
+const prevPendingMonthAmount = ref(null)
 
 const dailyChartRef = ref(null)
 const categoryChartRef = ref(null)
@@ -233,6 +249,21 @@ const calcRate = (current, previous) => {
   return ((Number(current) - prev) / Math.abs(prev)) * 100
 }
 
+// 本月支出 + 本月待支出，即本月预计总支出
+const totalExpectedExpense = computed(
+  () => Number(currentStat.value.totalExpense || 0) + Number(pendingMonthAmount.value || 0)
+)
+
+// 上月预计总支出，上月两项数据均缺失时返回 null，不展示环比
+const prevTotalExpectedExpense = computed(() => {
+  const prevExpense = previousStat.value?.totalExpense
+  const prevPending = prevPendingMonthAmount.value
+  if ((prevExpense === null || prevExpense === undefined) && prevPending === null) {
+    return null
+  }
+  return Number(prevExpense || 0) + Number(prevPending || 0)
+})
+
 const statCards = computed(() => {
   const cur = currentStat.value
   const prev = previousStat.value
@@ -244,21 +275,24 @@ const statCards = computed(() => {
       rate: calcRate(cur.totalExpense, prev?.totalExpense)
     },
     {
-      key: 'income',
-      title: '本月收入',
-      text: `¥ ${formatAmount(cur.totalIncome)}`,
-      rate: calcRate(cur.totalIncome, prev?.totalIncome)
+      key: 'pending',
+      title: '本月待支出',
+      text: `¥ ${formatAmount(pendingMonthAmount.value)}`,
+      rate: calcRate(pendingMonthAmount.value, prevPendingMonthAmount.value)
     },
     {
-      key: 'balance',
-      title: '本月结余',
-      text: `¥ ${formatAmount(cur.balance)}`,
-      rate: calcRate(cur.balance, prev?.balance)
+      key: 'expected',
+      title: '本月预计支出',
+      tip: '本月支出 + 本月待支出',
+      text: `¥ ${formatAmount(totalExpectedExpense.value)}`,
+      rate: calcRate(totalExpectedExpense.value, prevTotalExpectedExpense.value)
     },
     {
       key: 'count',
       title: '本月笔数',
+      tip: '主数字为本月已记账笔数，括号内为本月待支出笔数',
       text: String(cur.billCount || 0),
+      subText: `(待 ${pendingMonthCount.value})`,
       rate: calcRate(cur.billCount, prev?.billCount)
     }
   ]
@@ -366,12 +400,20 @@ const loadPendingExpense = async () => {
   pendingLoading.value = true
   try {
     const { startDate, endDate } = getMonthRange(selectedYear.value, selectedMonthNum.value)
-    const [yearRes, monthRes, listRes] = await Promise.all([
+    const prevDate = new Date(selectedYear.value, selectedMonthNum.value - 2, 1)
+    const prevRange = getMonthRange(prevDate.getFullYear(), prevDate.getMonth() + 1)
+
+    const [yearRes, monthRes, prevMonthRes, listRes, countRes] = await Promise.all([
       getTotalPendingAmount(selectedYear.value),
       getPendingAmountByQuery({
         statuses: ['PENDING'],
         paymentDateStart: startDate,
         paymentDateEnd: endDate
+      }),
+      getPendingAmountByQuery({
+        statuses: ['PENDING'],
+        paymentDateStart: prevRange.startDate,
+        paymentDateEnd: prevRange.endDate
       }),
       pagePendingExpenses({
         statuses: ['PENDING'],
@@ -380,12 +422,19 @@ const loadPendingExpense = async () => {
         sortOrder: 'asc',
         pageNum: 1,
         pageSize: PENDING_SIZE
+      }),
+      getPendingCountByQuery({
+        statuses: ['PENDING'],
+        paymentDateStart: startDate,
+        paymentDateEnd: endDate
       })
     ])
 
     pendingYearAmount.value = yearRes.code === 200 ? (yearRes.data || 0) : 0
     pendingMonthAmount.value = monthRes.code === 200 ? (monthRes.data || 0) : 0
+    prevPendingMonthAmount.value = prevMonthRes.code === 200 ? (prevMonthRes.data ?? null) : null
     pendingList.value = listRes.code === 200 ? (listRes.data?.records || []) : []
+    pendingMonthCount.value = countRes.code === 200 ? (countRes.data || 0) : 0
   } finally {
     pendingLoading.value = false
   }
@@ -585,10 +634,21 @@ onUnmounted(() => {
   color: #909399;
 }
 
-.stat-row,
 .chart-row,
 .bottom-row {
   margin-bottom: 20px;
+}
+
+/* 5 张指标卡等分，用 flex 避免 24 栅格无法整除 */
+.stat-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.stat-row .stat-card {
+  flex: 1;
+  min-width: 0;
 }
 
 .trend-card {
@@ -603,12 +663,30 @@ onUnmounted(() => {
   font-size: 14px;
   color: #909399;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.stat-tip {
+  font-size: 13px;
+  color: #c0c4cc;
+  cursor: help;
 }
 
 .stat-value {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: bold;
   line-height: 1.3;
+  white-space: nowrap;
+}
+
+.stat-sub {
+  font-size: 14px;
+  font-weight: normal;
+  color: #e6a23c;
+  margin-left: 4px;
 }
 
 .stat-compare {
@@ -637,20 +715,20 @@ onUnmounted(() => {
   color: #67c23a;
 }
 
-.income .stat-value {
-  color: #67c23a;
-}
-
 .expense .stat-value {
   color: #f56c6c;
 }
 
-.balance .stat-value {
-  color: #409eff;
+.pending .stat-value {
+  color: #e6a23c;
+}
+
+.expected .stat-value {
+  color: #f56c6c;
 }
 
 .count .stat-value {
-  color: #e6a23c;
+  color: #409eff;
 }
 
 .card-header {

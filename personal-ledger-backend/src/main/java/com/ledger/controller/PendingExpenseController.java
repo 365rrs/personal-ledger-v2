@@ -261,6 +261,20 @@ public class PendingExpenseController {
     }
     
     /**
+     * 根据查询条件统计待支付笔数
+     *
+     * @param queryDTO 查询条件DTO
+     * @return 待支付笔数
+     */
+    @PostMapping("/statistics/pending-count")
+    @ApiOperation("根据查询条件统计待支付笔数")
+    public Response<Long> getPendingCountByQuery(@RequestBody(required = false) PendingExpenseQueryDTO queryDTO) {
+        log.info("接收根据查询条件统计待支付笔数请求");
+        Long totalCount = pendingExpenseService.getPendingCountByQuery(queryDTO);
+        return Response.success(totalCount);
+    }
+    
+    /**
      * 按月份统计
      *
      * @param year 年份

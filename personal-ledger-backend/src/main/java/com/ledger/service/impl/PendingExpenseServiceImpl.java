@@ -705,8 +705,8 @@ public class PendingExpenseServiceImpl implements PendingExpenseService {
     public BigDecimal getPendingAmountByQuery(PendingExpenseQueryDTO queryDTO) {
         log.info("开始根据查询条件计算待支付金额总和");
         
-        // 构建查询条件（复用 buildQueryWrapper）
-        QueryWrapper<PendingExpense> queryWrapper = buildQueryWrapper(queryDTO);
+        // 构建查询条件（聚合查询不带排序）
+        QueryWrapper<PendingExpense> queryWrapper = buildConditionWrapper(queryDTO);
         
         // 如果查询条件中没有指定状态，默认只统计 PENDING 状态
         if (queryDTO == null || queryDTO.getStatuses() == null || queryDTO.getStatuses().isEmpty()) {
@@ -728,6 +728,24 @@ public class PendingExpenseServiceImpl implements PendingExpenseService {
         
         log.info("根据查询条件计算待支付金额总和完成 - totalAmount: {}", totalAmount);
         return totalAmount;
+    }
+    
+    @Override
+    public Long getPendingCountByQuery(PendingExpenseQueryDTO queryDTO) {
+        log.info("开始根据查询条件统计待支付笔数");
+        
+        // 构建查询条件（与金额统计口径一致，聚合查询不带排序）
+        QueryWrapper<PendingExpense> queryWrapper = buildConditionWrapper(queryDTO);
+        
+        // 如果查询条件中没有指定状态，默认只统计 PENDING 状态
+        if (queryDTO == null || queryDTO.getStatuses() == null || queryDTO.getStatuses().isEmpty()) {
+            queryWrapper.eq("status", ExpenseStatusEnum.PENDING.getCode());
+        }
+        
+        Long totalCount = pendingExpenseMapper.selectCount(queryWrapper);
+        
+        log.info("根据查询条件统计待支付笔数完成 - totalCount: {}", totalCount);
+        return totalCount == null ? 0L : totalCount;
     }
     
     @Override
@@ -873,12 +891,30 @@ public class PendingExpenseServiceImpl implements PendingExpenseService {
     }
     
     /**
-     * 构建查询条件（用于导出功能）
+     * 构建查询条件（用于列表、导出功能，带默认排序）
      *
      * @param queryDTO 查询条件
      * @return QueryWrapper
      */
     private QueryWrapper<PendingExpense> buildQueryWrapper(PendingExpenseQueryDTO queryDTO) {
+        QueryWrapper<PendingExpense> queryWrapper = buildConditionWrapper(queryDTO);
+        
+        // 默认按支付日期升序排序
+        queryWrapper.orderByAsc("payment_date");
+        
+        return queryWrapper;
+    }
+    
+    /**
+     * 构建纯筛选条件（不含排序）
+     * <p>
+     * 聚合统计（SUM/COUNT）场景使用，避免 ORDER BY 非聚合列在 only_full_group_by 模式下报错
+     * </p>
+     *
+     * @param queryDTO 查询条件
+     * @return QueryWrapper
+     */
+    private QueryWrapper<PendingExpense> buildConditionWrapper(PendingExpenseQueryDTO queryDTO) {
         QueryWrapper<PendingExpense> queryWrapper = new QueryWrapper<>();
         
         if (queryDTO == null) {
@@ -917,9 +953,6 @@ public class PendingExpenseServiceImpl implements PendingExpenseService {
         if (queryDTO.getPaymentDateEnd() != null) {
             queryWrapper.le("payment_date", queryDTO.getPaymentDateEnd());
         }
-        
-        // 默认按支付日期升序排序
-        queryWrapper.orderByAsc("payment_date");
         
         return queryWrapper;
     }

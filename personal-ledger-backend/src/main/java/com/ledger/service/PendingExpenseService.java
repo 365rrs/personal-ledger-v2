@@ -149,6 +149,14 @@ public interface PendingExpenseService {
     BigDecimal getPendingAmountByQuery(PendingExpenseQueryDTO queryDTO);
     
     /**
+     * 根据查询条件统计待支付笔数
+     *
+     * @param queryDTO 查询条件（可为null）
+     * @return 待支付笔数
+     */
+    Long getPendingCountByQuery(PendingExpenseQueryDTO queryDTO);
+    
+    /**
      * 按月份统计待支出
      *
      * @param year 年份（可为null，表示统计所有年份）
