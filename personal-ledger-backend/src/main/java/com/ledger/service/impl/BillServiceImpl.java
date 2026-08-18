@@ -9,6 +9,7 @@ import com.ledger.dto.BillCategoryStatisticsQueryDTO;
 import com.ledger.dto.BillCumulativeExpenseQueryDTO;
 import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
+import com.ledger.dto.BillMonthlyStatisticsQueryDTO;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.entity.Bill;
 import com.ledger.entity.BillTag;
@@ -24,6 +25,7 @@ import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillExportVO;
+import com.ledger.vo.BillMonthlyStatisticsVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 import lombok.extern.slf4j.Slf4j;
@@ -35,9 +37,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,6 +54,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class BillServiceImpl implements BillService {
+
+    /**
+     * 一年的月份数
+     */
+    private static final int MONTHS_OF_YEAR = 12;
 
     @Resource
     private BillMapper billMapper;
@@ -384,6 +393,38 @@ public class BillServiceImpl implements BillService {
         }
         
         return list;
+    }
+
+    @Override
+    public List<BillMonthlyStatisticsVO> getMonthlyStatistics(BillMonthlyStatisticsQueryDTO dto) {
+        // 默认查询当前年份
+        Integer year = dto.getYear() != null ? dto.getYear() : java.time.Year.now().getValue();
+
+        // 默认只统计计入收支的数据
+        String includeInStatistics = dto.getIncludeInStatistics();
+        if (includeInStatistics == null || includeInStatistics.isEmpty()) {
+            includeInStatistics = IncludeInStatisticsEnum.YES.getCode();
+        }
+
+        List<BillMonthlyStatisticsVO> dbList = billMapper.selectMonthlyStatistics(year, includeInStatistics);
+
+        // 按月份索引，便于补齐无数据的月份
+        Map<Integer, BillMonthlyStatisticsVO> monthMap = dbList == null ? Collections.emptyMap()
+                : dbList.stream().collect(Collectors.toMap(BillMonthlyStatisticsVO::getMonth, item -> item, (a, b) -> a));
+
+        // 固定返回 12 个月，无数据的月份补零，便于前端直接渲染
+        List<BillMonthlyStatisticsVO> result = new ArrayList<>(MONTHS_OF_YEAR);
+        for (int month = 1; month <= MONTHS_OF_YEAR; month++) {
+            BillMonthlyStatisticsVO vo = monthMap.get(month);
+            if (vo == null) {
+                vo = new BillMonthlyStatisticsVO(year, month, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0);
+            } else {
+                vo.setBalance(vo.getTotalIncome().subtract(vo.getTotalExpense()));
+            }
+            result.add(vo);
+        }
+
+        return result;
     }
 
     @Override

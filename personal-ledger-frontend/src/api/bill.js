@@ -90,6 +90,15 @@ export function getCategoryStatistics(data) {
   })
 }
 
+// 查询年度各月统计（一次性返回 12 个月）
+export function getMonthlyStatistics(data) {
+  return request({
+    url: '/bill/monthlyStatistics',
+    method: 'post',
+    data
+  })
+}
+
 // 导出账单
 export function exportBills(data) {
   return request({

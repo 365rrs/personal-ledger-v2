@@ -173,9 +173,27 @@
     <!-- 查询统计数据 -->
     <select id="getStatistics" resultType="com.ledger.vo.BillStatisticsVO">
         SELECT COALESCE(SUM(CASE WHEN amount_type = 'INCOME' THEN income_amount ELSE 0 END), 0)   AS totalIncome,
-               COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0) AS totalExpense
+               COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0) AS totalExpense,
+               COUNT(*)                                                                           AS billCount
         FROM bill
         <include refid="Common_Where_Clause"/>
+    </select>
+
+    <!-- 查询年度各月统计（一次性返回全年，避免前端按月多次请求） -->
+    <select id="selectMonthlyStatistics" resultType="com.ledger.vo.BillMonthlyStatisticsVO">
+        SELECT YEAR(transaction_date)                                                              AS year,
+               MONTH(transaction_date)                                                            AS month,
+               COALESCE(SUM(CASE WHEN amount_type = 'INCOME' THEN income_amount ELSE 0 END), 0)    AS totalIncome,
+               COALESCE(SUM(CASE WHEN amount_type = 'EXPENSE' THEN expense_amount ELSE 0 END), 0)  AS totalExpense,
+               COUNT(*)                                                                           AS billCount
+        FROM bill
+        WHERE deleted = '0'
+          AND YEAR(transaction_date) = #{year}
+        <if test="includeInStatistics != null and includeInStatistics != ''">
+            AND include_in_statistics = #{includeInStatistics}
+        </if>
+        GROUP BY YEAR(transaction_date), MONTH(transaction_date)
+        ORDER BY month ASC
     </select>
 
     <!-- 更新账单（手工记账允许更新所有字段，导入账单只更新部分字段） -->

@@ -6,11 +6,13 @@ import com.ledger.dto.BillCategoryStatisticsQueryDTO;
 import com.ledger.dto.BillCumulativeExpenseQueryDTO;
 import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
+import com.ledger.dto.BillMonthlyStatisticsQueryDTO;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillExportVO;
+import com.ledger.vo.BillMonthlyStatisticsVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 
@@ -73,6 +75,11 @@ public interface BillService {
      * 按分类统计
      */
     List<BillCategoryStatisticsVO> getCategoryStatistics(BillCategoryStatisticsQueryDTO dto);
+    
+    /**
+     * 查询年度各月统计（固定返回 12 个月，无数据的月份补零）
+     */
+    List<BillMonthlyStatisticsVO> getMonthlyStatistics(BillMonthlyStatisticsQueryDTO dto);
     
     /**
      * 导出账单

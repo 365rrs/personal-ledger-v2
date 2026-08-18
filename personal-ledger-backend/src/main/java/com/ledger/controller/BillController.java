@@ -8,12 +8,14 @@ import com.ledger.dto.BillCategoryStatisticsQueryDTO;
 import com.ledger.dto.BillCumulativeExpenseQueryDTO;
 import com.ledger.dto.BillDailyExpenseQueryDTO;
 import com.ledger.dto.BillDTO;
+import com.ledger.dto.BillMonthlyStatisticsQueryDTO;
 import com.ledger.dto.BillQueryDTO;
 import com.ledger.service.BillService;
 import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillExportVO;
+import com.ledger.vo.BillMonthlyStatisticsVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -111,6 +113,13 @@ public class BillController {
     @PostMapping("/categoryStatistics")
     public Response<List<BillCategoryStatisticsVO>> getCategoryStatistics(@RequestBody BillCategoryStatisticsQueryDTO dto) {
         List<BillCategoryStatisticsVO> list = billService.getCategoryStatistics(dto);
+        return Response.success(list);
+    }
+    
+    @Operation(summary = "查询年度各月统计")
+    @PostMapping("/monthlyStatistics")
+    public Response<List<BillMonthlyStatisticsVO>> getMonthlyStatistics(@RequestBody BillMonthlyStatisticsQueryDTO dto) {
+        List<BillMonthlyStatisticsVO> list = billService.getMonthlyStatistics(dto);
         return Response.success(list);
     }
     

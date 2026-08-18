@@ -8,6 +8,7 @@ import com.ledger.entity.Bill;
 import com.ledger.vo.BillCategoryStatisticsVO;
 import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
+import com.ledger.vo.BillMonthlyStatisticsVO;
 import com.ledger.vo.BillStatisticsVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -77,6 +78,16 @@ public interface BillMapper extends BaseMapper<Bill> {
                                                              @Param("month") Integer month, 
                                                              @Param("amountType") String amountType);
     
+    /**
+     * 查询年度各月统计
+     *
+     * @param year                 年份
+     * @param includeInStatistics  是否只统计计入收支的数据（可选）
+     * @return 月度统计列表（只包含有数据的月份）
+     */
+    List<BillMonthlyStatisticsVO> selectMonthlyStatistics(@Param("year") Integer year,
+                                                          @Param("includeInStatistics") String includeInStatistics);
+
     /**
      * 查询账单列表（不分页）
      *
