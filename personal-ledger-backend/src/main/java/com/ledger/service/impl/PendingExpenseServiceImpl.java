@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ledger.converter.PendingExpenseConverter;
 import com.ledger.dto.PendingExpenseDTO;
-import com.ledger.dto.PendingExpenseImportDTO;
+import com.ledger.dto.PendingExpenseExportDTO;
 import com.ledger.dto.PendingExpenseQueryDTO;
 import com.ledger.dto.RecurringExpenseDTO;
 import com.ledger.entity.BillCategory;
@@ -25,7 +25,6 @@ import com.ledger.vo.PendingExpenseVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
@@ -815,150 +814,6 @@ public class PendingExpenseServiceImpl implements PendingExpenseService {
     // ================== 导入导出 ==================
     
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public List<String> importFromExcel(MultipartFile file) {
-        log.info("开始从 Excel 导入待支出项目 - 文件名: {}", file.getOriginalFilename());
-        
-        List<String> errorMessages = new ArrayList<>();
-        
-        // 验证文件类型
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || 
-            (!originalFilename.toLowerCase().endsWith(".xlsx") && !originalFilename.toLowerCase().endsWith(".xls"))) {
-            errorMessages.add("文件格式不正确，仅支持 .xlsx 和 .xls 格式");
-            return errorMessages;
-        }
-        
-        try {
-            // 使用 EasyExcel 解析文件
-            List<PendingExpenseImportDTO> importList = EasyExcel.read(file.getInputStream())
-                    .head(PendingExpenseImportDTO.class)
-                    .sheet()
-                    .doReadSync();
-            
-            if (importList == null || importList.isEmpty()) {
-                errorMessages.add("Excel 文件为空或没有数据行");
-                return errorMessages;
-            }
-            
-            log.info("Excel 解析完成 - 共 {} 行数据", importList.size());
-            
-            // 构建分类名称到ID的映射
-            Map<String, Long> categoryNameToIdMap = new HashMap<>();
-            QueryWrapper<BillCategory> categoryQueryWrapper = new QueryWrapper<>();
-            categoryQueryWrapper.select("id", "category_name");
-            List<BillCategory> allCategories = billCategoryMapper.selectList(categoryQueryWrapper);
-            for (BillCategory category : allCategories) {
-                categoryNameToIdMap.put(category.getCategoryName(), category.getId());
-            }
-            
-            // 构建支付渠道名称到ID的映射
-            Map<String, Long> channelNameToIdMap = new HashMap<>();
-            QueryWrapper<BillPaymentChannel> channelQueryWrapper = new QueryWrapper<>();
-            channelQueryWrapper.select("id", "channel_name");
-            List<BillPaymentChannel> allChannels = billPaymentChannelMapper.selectList(channelQueryWrapper);
-            for (BillPaymentChannel channel : allChannels) {
-                channelNameToIdMap.put(channel.getChannelName(), channel.getId());
-            }
-            
-            // 逐行验证并转换数据
-            List<PendingExpense> validExpenses = new ArrayList<>();
-            
-            for (int i = 0; i < importList.size(); i++) {
-                int rowNum = i + 2; // Excel 行号从 1 开始，且有标题行
-                PendingExpenseImportDTO importDTO = importList.get(i);
-                StringBuilder rowErrors = new StringBuilder();
-                
-                // 验证必填字段
-                if (importDTO.getExpenseName() == null || importDTO.getExpenseName().trim().isEmpty()) {
-                    rowErrors.append("项目名称不能为空; ");
-                }
-                if (importDTO.getAmount() == null) {
-                    rowErrors.append("金额不能为空; ");
-                } else if (importDTO.getAmount().compareTo(new BigDecimal("0.01")) < 0 || 
-                           importDTO.getAmount().compareTo(new BigDecimal("999999.99")) > 0) {
-                    rowErrors.append("金额必须在 0.01 到 999999.99 之间; ");
-                }
-                if (importDTO.getPaymentDate() == null) {
-                    rowErrors.append("支付日期不能为空; ");
-                } else if (importDTO.getPaymentDate().isBefore(LocalDate.of(1900, 1, 1))) {
-                    rowErrors.append("支付日期不能早于 1900-01-01; ");
-                }
-                if (importDTO.getPeriod() == null || importDTO.getPeriod().trim().isEmpty()) {
-                    rowErrors.append("周期不能为空; ");
-                } else if (!importDTO.getPeriod().matches("MONTHLY|YEARLY|ONETIME")) {
-                    rowErrors.append("周期必须是 MONTHLY、YEARLY 或 ONETIME; ");
-                }
-                if (importDTO.getPlanType() == null || importDTO.getPlanType().trim().isEmpty()) {
-                    rowErrors.append("计划类型不能为空; ");
-                } else if (!importDTO.getPlanType().matches("RIGID|INTENDED")) {
-                    rowErrors.append("计划类型必须是 RIGID 或 INTENDED; ");
-                }
-                
-                // 验证状态枚举值（如果提供了）
-                if (importDTO.getStatus() != null && !importDTO.getStatus().trim().isEmpty()) {
-                    if (!importDTO.getStatus().matches("PENDING|COMPLETED|CANCELLED")) {
-                        rowErrors.append("状态必须是 PENDING、COMPLETED 或 CANCELLED; ");
-                    }
-                }
-                
-                // 查询分类ID
-                Long categoryId = null;
-                if (importDTO.getCategoryName() != null && !importDTO.getCategoryName().trim().isEmpty()) {
-                    categoryId = categoryNameToIdMap.get(importDTO.getCategoryName().trim());
-                    if (categoryId == null) {
-                        rowErrors.append("分类名称不存在: ").append(importDTO.getCategoryName()).append("; ");
-                    }
-                }
-                
-                // 如果有错误，记录错误信息并跳过该行
-                if (rowErrors.length() > 0) {
-                    errorMessages.add("第 " + rowNum + " 行: " + rowErrors.toString());
-                    continue;
-                }
-                
-                // 转换为 Entity
-                PendingExpense expense = new PendingExpense();
-                expense.setExpenseName(importDTO.getExpenseName().trim());
-                expense.setAmount(importDTO.getAmount());
-                expense.setPaymentDate(importDTO.getPaymentDate());
-                expense.setPeriod(importDTO.getPeriod().trim());
-                expense.setPlanType(importDTO.getPlanType().trim());
-                expense.setStatus(importDTO.getStatus() != null && !importDTO.getStatus().trim().isEmpty() 
-                                  ? importDTO.getStatus().trim() 
-                                  : ExpenseStatusEnum.PENDING.getCode());
-                expense.setCategoryId(categoryId);
-                expense.setRemark(importDTO.getRemark());
-                
-                validExpenses.add(expense);
-            }
-            
-            // 批量保存有效数据
-            if (!validExpenses.isEmpty()) {
-                for (PendingExpense expense : validExpenses) {
-                    pendingExpenseMapper.insert(expense);
-                }
-                log.info("成功导入 {} 条待支出项目", validExpenses.size());
-            }
-            
-            if (errorMessages.isEmpty()) {
-                log.info("Excel 导入完成 - 全部成功");
-            } else {
-                log.warn("Excel 导入完成 - 成功: {}, 失败: {}", validExpenses.size(), errorMessages.size());
-            }
-            
-        } catch (IOException e) {
-            log.error("读取 Excel 文件时发生异常", e);
-            errorMessages.add("读取 Excel 文件失败: " + e.getMessage());
-        } catch (Exception e) {
-            log.error("导入 Excel 时发生异常", e);
-            errorMessages.add("导入失败: " + e.getMessage());
-        }
-        
-        return errorMessages;
-    }
-    
-    @Override
     public void exportToExcel(HttpServletResponse response, PendingExpenseQueryDTO queryDTO) {
         log.info("开始导出待支出项目为 Excel");
         
@@ -968,10 +823,10 @@ public class PendingExpenseServiceImpl implements PendingExpenseService {
             List<PendingExpense> expenseList = pendingExpenseMapper.selectList(queryWrapper);
             
             // 转换为导出 DTO
-            List<PendingExpenseImportDTO> exportList = new ArrayList<>();
+            List<PendingExpenseExportDTO> exportList = new ArrayList<>();
             
             for (PendingExpense expense : expenseList) {
-                PendingExpenseImportDTO exportDTO = new PendingExpenseImportDTO();
+                PendingExpenseExportDTO exportDTO = new PendingExpenseExportDTO();
                 exportDTO.setExpenseName(expense.getExpenseName());
                 exportDTO.setAmount(expense.getAmount());
                 exportDTO.setPaymentDate(expense.getPaymentDate());
@@ -1002,7 +857,7 @@ public class PendingExpenseServiceImpl implements PendingExpenseService {
             response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFileName);
             
             // 使用 EasyExcel 写入响应流
-            EasyExcel.write(response.getOutputStream(), PendingExpenseImportDTO.class)
+            EasyExcel.write(response.getOutputStream(), PendingExpenseExportDTO.class)
                     .sheet("待支出项目")
                     .doWrite(exportList);
             

@@ -178,9 +178,6 @@ const loadData = async () => {
     }
     
     categoryList.value = flattenCategories(catRes.data || [])
-    paymentChannelList.value = (channelRes.data || [])
-      .filter(c => c.enabled === '1')
-      .sort((a, b) => a.sortOrder - b.sortOrder)
   } catch (error) {
     console.error('加载数据失败:', error)
     ElMessage.error('加载数据失败')
@@ -199,7 +196,6 @@ const loadEditData = async () => {
         period: res.data.period,
         planType: res.data.planType,
         categoryId: res.data.categoryId,
-        paymentChannelId: res.data.paymentChannelId,
         remark: res.data.remark || ''
       })
     } catch (error) {
@@ -245,7 +241,6 @@ const handleClose = () => {
     period: 'MONTHLY',
     planType: 'RIGID',
     categoryId: null,
-    paymentChannelId: null,
     remark: ''
   })
 }

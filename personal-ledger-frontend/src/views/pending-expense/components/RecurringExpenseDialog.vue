@@ -93,23 +93,6 @@
         </el-select>
       </el-form-item>
       
-      <el-form-item label="支付渠道">
-        <el-select 
-          v-model="form.paymentChannelId" 
-          placeholder="请选择支付渠道" 
-          filterable
-          clearable
-          style="width: 100%;"
-        >
-          <el-option
-            v-for="channel in paymentChannelList"
-            :key="channel.id"
-            :label="channel.channelName"
-            :value="channel.id"
-          />
-        </el-select>
-      </el-form-item>
-      
       <el-form-item label="备注">
         <el-input 
           v-model="form.remark" 
@@ -149,7 +132,6 @@ import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createRecurringExpense } from '@/api/pendingExpense'
 import { getCategoryList } from '@/api/category'
-import { listPaymentChannels } from '@/api/paymentChannel'
 
 const props = defineProps({
   modelValue: Boolean
@@ -165,7 +147,6 @@ const visible = computed({
 const formRef = ref()
 const submitting = ref(false)
 const categoryList = ref([])
-const paymentChannelList = ref([])
 const estimatedCount = ref(0)
 
 const form = reactive({
@@ -177,7 +158,6 @@ const form = reactive({
   months: [],
   days: [],
   categoryId: null,
-  paymentChannelId: null,
   remark: ''
 })
 
@@ -215,13 +195,10 @@ const updateEstimate = () => {
   estimatedCount.value = form.months.length * form.days.length
 }
 
-// 加载分类和支付渠道数据
+// 加载分类数据
 const loadData = async () => {
   try {
-    const [catRes, channelRes] = await Promise.all([
-      getCategoryList('EXPENSE', '1'),
-      listPaymentChannels({ size: 100 })
-    ])
+    const catRes = await getCategoryList('EXPENSE', '1')
     
     // 扁平化分类列表
     const flattenCategories = (categories) => {
@@ -238,9 +215,6 @@ const loadData = async () => {
     }
     
     categoryList.value = flattenCategories(catRes.data || [])
-    paymentChannelList.value = (channelRes.data || [])
-      .filter(c => c.enabled === '1')
-      .sort((a, b) => a.sortOrder - b.sortOrder)
   } catch (error) {
     console.error('加载数据失败:', error)
     ElMessage.error('加载数据失败')
@@ -292,7 +266,6 @@ const handleClose = () => {
     months: [],
     days: [],
     categoryId: null,
-    paymentChannelId: null,
     remark: ''
   })
   estimatedCount.value = 0

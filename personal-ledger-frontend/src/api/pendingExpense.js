@@ -180,18 +180,6 @@ export function getPlanTypeStatistics(year) {
 
 // ==================== 导入导出 ====================
 
-// 从 Excel 导入
-export function importFromExcel(file) {
-  const formData = new FormData()
-  formData.append('file', file)
-  return request({
-    url: '/pending-expense/import',
-    method: 'post',
-    data: formData,
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-}
-
 // 导出为 Excel
 export function exportToExcel(queryParams) {
   return request({

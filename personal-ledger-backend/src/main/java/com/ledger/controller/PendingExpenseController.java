@@ -13,7 +13,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
@@ -322,20 +321,6 @@ public class PendingExpenseController {
     }
     
     // ================== 导入导出 ==================
-    
-    /**
-     * 从Excel导入
-     *
-     * @param file 上传的Excel文件
-     * @return 错误信息列表（为空表示全部成功）
-     */
-    @PostMapping("/import")
-    @ApiOperation("从Excel导入")
-    public Response<List<String>> importFromExcel(@RequestParam("file") MultipartFile file) {
-        log.info("接收从Excel导入请求 - 文件名: {}", file.getOriginalFilename());
-        List<String> errorMessages = pendingExpenseService.importFromExcel(file);
-        return Response.success(errorMessages);
-    }
     
     /**
      * 导出为Excel

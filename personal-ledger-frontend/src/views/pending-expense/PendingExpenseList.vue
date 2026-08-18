@@ -175,9 +175,6 @@
           <el-button type="success" @click="handleRecurringCreate" :icon="DocumentAdd">
             批量创建周期性支出
           </el-button>
-          <el-button type="warning" @click="handleImport" :icon="Upload">
-            批量导入
-          </el-button>
           <el-button type="info" @click="handleExport" :icon="Download">
             导出Excel
           </el-button>
@@ -222,7 +219,7 @@
       >
         <el-table-column type="selection" width="55" align="center" />
         
-        <el-table-column prop="expenseName" label="项目名称" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="expenseName" label="项目名称" min-width="300" show-overflow-tooltip />
         
         <el-table-column prop="amount" label="金额" width="120" align="right" sortable="custom">
           <template #default="{ row }">
@@ -343,12 +340,6 @@
       @success="handleDialogSuccess"
     />
     
-    <!-- 导入对话框 -->
-    <PendingExpenseImportDialog
-      v-model="importDialogVisible"
-      @success="handleDialogSuccess"
-    />
-    
     <!-- 批量操作失败详情对话框 -->
     <el-dialog
       v-model="batchResultDialogVisible"
@@ -400,7 +391,6 @@ import {
   Refresh, 
   Plus, 
   DocumentAdd, 
-  Upload, 
   Download, 
   Select, 
   Close, 
@@ -422,7 +412,6 @@ import {
 import { getCategoryList } from '@/api/category'
 import PendingExpenseEditDialog from './components/PendingExpenseEditDialog.vue'
 import RecurringExpenseDialog from './components/RecurringExpenseDialog.vue'
-import PendingExpenseImportDialog from './components/PendingExpenseImportDialog.vue'
 
 // 14.6 数据状态管理
 const loading = ref(false)
@@ -454,7 +443,6 @@ const editDialogVisible = ref(false)
 const editMode = ref('create')
 const currentEditId = ref(null)
 const recurringDialogVisible = ref(false)
-const importDialogVisible = ref(false)
 const batchResultDialogVisible = ref(false)
 const batchResult = reactive({
   successCount: 0,
@@ -863,11 +851,6 @@ const handleBatchDelete = async () => {
 // 14.3 批量创建周期性支出
 const handleRecurringCreate = () => {
   recurringDialogVisible.value = true
-}
-
-// 14.9 导入
-const handleImport = () => {
-  importDialogVisible.value = true
 }
 
 // 14.9 导出

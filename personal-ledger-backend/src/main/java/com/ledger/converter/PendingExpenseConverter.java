@@ -1,7 +1,6 @@
 package com.ledger.converter;
 
 import com.ledger.dto.PendingExpenseDTO;
-import com.ledger.dto.PendingExpenseImportDTO;
 import com.ledger.entity.PendingExpense;
 import com.ledger.vo.PendingExpenseVO;
 import org.mapstruct.Mapper;
@@ -40,12 +39,4 @@ public interface PendingExpenseConverter {
      * @return 待支出VO列表
      */
     List<PendingExpenseVO> toVOList(List<PendingExpense> entities);
-    
-    /**
-     * 导入 DTO 转 Entity
-     *
-     * @param importDTO 导入DTO
-     * @return 待支出实体
-     */
-    PendingExpense fromImportDTO(PendingExpenseImportDTO importDTO);
 }

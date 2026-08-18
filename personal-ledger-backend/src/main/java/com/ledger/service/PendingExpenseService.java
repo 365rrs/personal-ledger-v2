@@ -7,7 +7,6 @@ import com.ledger.dto.RecurringExpenseDTO;
 import com.ledger.vo.BatchOperationResult;
 import com.ledger.vo.PendingExpenseStatisticsVO;
 import com.ledger.vo.PendingExpenseVO;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
@@ -182,14 +181,6 @@ public interface PendingExpenseService {
     List<PendingExpenseStatisticsVO.PlanTypeStatistics> getPlanTypeStatistics(Integer year);
     
     // ================== 导入导出 ==================
-    
-    /**
-     * 从Excel导入待支出项目
-     *
-     * @param file Excel文件
-     * @return 错误信息列表（如果为空表示全部导入成功）
-     */
-    List<String> importFromExcel(MultipartFile file);
     
     /**
      * 导出待支出项目为Excel
