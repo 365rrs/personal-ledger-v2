@@ -3,19 +3,17 @@
     <!-- 14.2 筛选条件区域 -->
     <el-card class="filter-card" shadow="never">
       <el-form :model="queryForm" label-width="100px">
-        <!-- 快捷日期选择 -->
+        <!-- 快捷日期：待支出面向未来的付款计划，提供 月/年 维度的前后周期切换 -->
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="快捷日期">
               <el-radio-group v-model="quickDate" @change="handleQuickDateChange" size="default">
-                <el-radio-button label="today">今天</el-radio-button>
-                <el-radio-button label="yesterday">昨天</el-radio-button>
-                <el-radio-button label="week">本周</el-radio-button>
-                <el-radio-button label="lastWeek">上周</el-radio-button>
                 <el-radio-button label="month">本月</el-radio-button>
                 <el-radio-button label="lastMonth">上月</el-radio-button>
-                <el-radio-button label="year">本年</el-radio-button>
+                <el-radio-button label="nextMonth">下月</el-radio-button>
+                <el-radio-button label="year">今年</el-radio-button>
                 <el-radio-button label="lastYear">去年</el-radio-button>
+                <el-radio-button label="nextYear">下一年</el-radio-button>
                 <el-radio-button label="custom">自定义</el-radio-button>
               </el-radio-group>
             </el-form-item>
@@ -25,7 +23,7 @@
         <!-- 月份选择 -->
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="选择月份">
+            <el-form-item label="指定月份">
               <el-date-picker
                 v-model="selectedMonth"
                 type="month"
@@ -535,34 +533,10 @@ const handleQuickDateChange = (value) => {
   const today = new Date()
   const year = today.getFullYear()
   const month = today.getMonth()
-  const date = today.getDate()
-  const day = today.getDay()
   
   let startDate, endDate
   
   switch (value) {
-    case 'today':
-      startDate = endDate = new Date(year, month, date)
-      break
-      
-    case 'yesterday':
-      startDate = endDate = new Date(year, month, date - 1)
-      break
-      
-    case 'week':
-      // 本周（周一到周日）
-      const mondayOffset = day === 0 ? -6 : 1 - day
-      startDate = new Date(year, month, date + mondayOffset)
-      endDate = new Date(year, month, date + mondayOffset + 6)
-      break
-      
-    case 'lastWeek':
-      // 上周（周一到周日）
-      const lastMondayOffset = day === 0 ? -13 : -6 - day
-      startDate = new Date(year, month, date + lastMondayOffset)
-      endDate = new Date(year, month, date + lastMondayOffset + 6)
-      break
-      
     case 'month':
       // 本月
       startDate = new Date(year, month, 1)
@@ -575,8 +549,14 @@ const handleQuickDateChange = (value) => {
       endDate = new Date(year, month, 0)
       break
       
+    case 'nextMonth':
+      // 下月
+      startDate = new Date(year, month + 1, 1)
+      endDate = new Date(year, month + 2, 0)
+      break
+      
     case 'year':
-      // 本年
+      // 今年
       startDate = new Date(year, 0, 1)
       endDate = new Date(year, 11, 31)
       break
@@ -586,6 +566,15 @@ const handleQuickDateChange = (value) => {
       startDate = new Date(year - 1, 0, 1)
       endDate = new Date(year - 1, 11, 31)
       break
+      
+    case 'nextYear':
+      // 下一年
+      startDate = new Date(year + 1, 0, 1)
+      endDate = new Date(year + 1, 11, 31)
+      break
+      
+    default:
+      return
   }
   
   // 格式化日期为 YYYY-MM-DD
@@ -859,7 +848,7 @@ const formatDateTime = (datetime) => {
 
 // 组件挂载时加载数据
 onMounted(() => {
-  // 默认设置为本年
+  // 默认设置为今年
   quickDate.value = 'year'
   handleQuickDateChange('year')
   
