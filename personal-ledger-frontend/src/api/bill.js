@@ -108,3 +108,13 @@ export function exportBills(data) {
     responseType: 'blob'
   })
 }
+
+// 导出账单为钱迹格式
+export function exportQianjiBills(data) {
+  return request({
+    url: '/bill/exportQianji',
+    method: 'post',
+    data,
+    responseType: 'blob'
+  })
+}

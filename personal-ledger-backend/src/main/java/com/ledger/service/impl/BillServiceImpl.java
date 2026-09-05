@@ -26,6 +26,7 @@ import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillExportVO;
 import com.ledger.vo.BillMonthlyStatisticsVO;
+import com.ledger.vo.BillQianjiExportVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 import lombok.extern.slf4j.Slf4j;
@@ -35,8 +36,11 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -469,6 +473,96 @@ public class BillServiceImpl implements BillService {
             } else {
                 vo.setTags("");
             }
+            
+            return vo;
+        }).collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<BillQianjiExportVO> exportQianjiBills(BillQueryDTO dto) {
+        // 查询所有符合条件的账单（不分页）
+        List<Bill> bills = billMapper.selectBillList(dto);
+        
+        // 日期时间格式化器
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        
+        // 转换为钱迹格式
+        return bills.stream().map(bill -> {
+            BillQianjiExportVO vo = new BillQianjiExportVO();
+            
+            // 1. 时间: 格式化为 YYYY/MM/DD HH:MM
+            LocalDate date = bill.getTransactionDate();
+            LocalTime time = bill.getTransactionTime() != null ? bill.getTransactionTime() : LocalTime.of(0, 0);
+            String dateStr = date != null ? date.format(dateFormatter) : "";
+            String timeStr = time.format(timeFormatter);
+            vo.setTime(dateStr + " " + timeStr);
+            
+            // 2. 分类: 一级分类
+            vo.setCategory(bill.getCategory() != null ? bill.getCategory() : "");
+            
+            // 3. 二级分类
+            vo.setSubCategory(bill.getSubCategory() != null ? bill.getSubCategory() : "");
+            
+            // 4. 类型: 收入/支出
+            vo.setType("INCOME".equals(bill.getAmountType()) ? "收入" : "支出");
+            
+            // 5. 金额: 收入金额或支出金额
+            BigDecimal amount = "INCOME".equals(bill.getAmountType()) 
+                ? (bill.getIncomeAmount() != null ? bill.getIncomeAmount() : BigDecimal.ZERO)
+                : (bill.getExpenseAmount() != null ? bill.getExpenseAmount() : BigDecimal.ZERO);
+            vo.setAmount(amount);
+            
+            // 6. 账户1: 支付渠道 (用户可以选择不导入，留空即可)
+            vo.setAccount1(bill.getPaymentChannel() != null ? bill.getPaymentChannel() : "");
+            
+            // 7. 账户2: 留空 (转账目标账户)
+            vo.setAccount2("");
+            
+            // 8. 备注: 优先用备注，为空则用交易描述
+            String remark = "";
+            if (bill.getManualRemark() != null && !bill.getManualRemark().trim().isEmpty()) {
+                remark = bill.getManualRemark().trim();
+            } else if (bill.getTransactionDesc() != null && !bill.getTransactionDesc().trim().isEmpty()) {
+                remark = bill.getTransactionDesc().trim();
+            }
+            vo.setRemark(remark);
+            
+            // 9. 账单标记: 计入统计为"否"时填"不计收支"
+            String billFlag = "";
+            if ("0".equals(bill.getIncludeInStatistics())) {
+                billFlag = "不计收支";
+            }
+            vo.setBillFlag(billFlag);
+            
+            // 10. 手续费: 留空
+            vo.setFee("");
+            
+            // 11. 优惠券: 留空
+            vo.setCoupon("");
+            
+            // 12. 标签: 使用 #标签名# 格式
+            List<Long> tagIds = loadTagIds(bill.getId());
+            if (tagIds != null && !tagIds.isEmpty()) {
+                // 查询标签名称并格式化为 #标签1#标签2# 格式
+                String tags = tagIds.stream()
+                    .map(tagId -> {
+                        BillTag tag = billTagMapper.selectById(tagId);
+                        return tag != null ? "#" + tag.getTagName() : null;
+                    })
+                    .filter(name -> name != null)
+                    .collect(Collectors.joining(""));
+                // 末尾添加 #
+                if (!tags.isEmpty()) {
+                    tags = tags + "#";
+                }
+                vo.setTags(tags);
+            } else {
+                vo.setTags("");
+            }
+            
+            // 13. 账单图片: 留空
+            vo.setImage("");
             
             return vo;
         }).collect(Collectors.toList());

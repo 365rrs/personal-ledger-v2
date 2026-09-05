@@ -16,6 +16,7 @@ import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillExportVO;
 import com.ledger.vo.BillMonthlyStatisticsVO;
+import com.ledger.vo.BillQianjiExportVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -139,5 +140,56 @@ public class BillController {
         EasyExcel.write(response.getOutputStream(), BillExportVO.class)
                 .sheet("账单列表")
                 .doWrite(list);
+    }
+    
+    @Operation(summary = "导出账单为钱迹格式")
+    @PostMapping("/exportQianji")
+    public void exportQianji(@RequestBody BillQueryDTO dto, HttpServletResponse response) throws IOException {
+        // 查询数据
+        List<BillQianjiExportVO> list = billService.exportQianjiBills(dto);
+        
+        // 设置响应头为CSV格式
+        response.setContentType("text/csv;charset=utf-8");
+        response.setCharacterEncoding("utf-8");
+        String fileName = URLEncoder.encode("钱迹导入数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")), "UTF-8");
+        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".csv");
+        
+        // 使用 Apache Commons CSV 导出，完全控制格式
+        // 先写入 UTF-8 BOM
+        response.getOutputStream().write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+        
+        // 创建 CSV Writer（使用 UTF-8，不添加额外 BOM）
+        try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
+                response.getOutputStream(), 
+                java.nio.charset.StandardCharsets.UTF_8);
+             org.apache.commons.csv.CSVPrinter csvPrinter = new org.apache.commons.csv.CSVPrinter(
+                writer,
+                org.apache.commons.csv.CSVFormat.DEFAULT)) {
+            
+            // 写入表头
+            csvPrinter.printRecord("时间", "分类", "二级分类", "类型", "金额", "账户1", "账户2", 
+                                  "备注", "账单标记", "手续费", "优惠券", "标签", "账单图片");
+            
+            // 写入数据行
+            for (BillQianjiExportVO vo : list) {
+                csvPrinter.printRecord(
+                    vo.getTime(),
+                    vo.getCategory(),
+                    vo.getSubCategory(),
+                    vo.getType(),
+                    vo.getAmount(),
+                    vo.getAccount1(),
+                    vo.getAccount2(),
+                    vo.getRemark(),
+                    vo.getBillFlag(),
+                    vo.getFee(),
+                    vo.getCoupon(),
+                    vo.getTags(),
+                    vo.getImage()
+                );
+            }
+            
+            csvPrinter.flush();
+        }
     }
 }

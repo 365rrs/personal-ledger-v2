@@ -13,6 +13,7 @@ import com.ledger.vo.BillCumulativeExpenseVO;
 import com.ledger.vo.BillDailyExpenseVO;
 import com.ledger.vo.BillExportVO;
 import com.ledger.vo.BillMonthlyStatisticsVO;
+import com.ledger.vo.BillQianjiExportVO;
 import com.ledger.vo.BillStatisticsVO;
 import com.ledger.vo.BillVO;
 
@@ -85,4 +86,9 @@ public interface BillService {
      * 导出账单
      */
     List<BillExportVO> exportBills(BillQueryDTO dto);
+    
+    /**
+     * 导出账单为钱迹格式
+     */
+    List<BillQianjiExportVO> exportQianjiBills(BillQueryDTO dto);
 }

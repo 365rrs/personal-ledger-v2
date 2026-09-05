@@ -11,7 +11,11 @@
             </el-button>
             <el-button type="success" @click="handleExport" :loading="exporting">
               <el-icon><Download /></el-icon>
-              导出
+              导出Excel
+            </el-button>
+            <el-button type="warning" @click="handleExportQianji" :loading="exportingQianji">
+              <el-icon><Download /></el-icon>
+              导出钱迹格式
             </el-button>
             <el-button type="primary" @click="handleCreate">+ 记一笔</el-button>
           </div>
@@ -823,7 +827,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Setting, Select, Wallet, Folder, Edit, Collection, DataAnalysis, Delete, Plus, Download } from '@element-plus/icons-vue'
-import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills, exportBills, getBill } from '@/api/bill'
+import { pageBills, getStatistics, createBill, updateBill, batchUpdateBills, exportBills, exportQianjiBills, getBill } from '@/api/bill'
 import { getTagList } from '@/api/tag'
 import { getCategoryList } from '@/api/category'
 import { listPaymentChannels } from '@/api/paymentChannel'
@@ -1718,6 +1722,7 @@ const handleBatchUpdate = async (type) => {
 
 // 导出状态
 const exporting = ref(false)
+const exportingQianji = ref(false)
 
 // 导出功能
 const handleExport = async () => {
@@ -1770,6 +1775,60 @@ const handleExport = async () => {
     ElMessage.error(error.message || '导出失败')
   } finally {
     exporting.value = false
+  }
+}
+
+// 导出钱迹格式功能
+const handleExportQianji = async () => {
+  try {
+    exportingQianji.value = true
+    
+    // 构建导出查询条件（与列表查询条件一致，但不包含分页参数）
+    const exportQuery = {
+      transactionType: queryForm.transactionType,
+      categoryId: queryForm.categoryId,
+      subCategoryId: queryForm.subCategoryId,
+      paymentChannel: queryForm.paymentChannel,
+      amountType: queryForm.amountType,
+      includeInStatistics: queryForm.includeInStatistics,
+      manualEntry: queryForm.manualEntry,
+      tagIds: queryForm.tagIds,
+      keywords: queryForm.keywords,
+      minAmount: queryForm.minAmount,
+      maxAmount: queryForm.maxAmount,
+      startDate: queryForm.startDate,
+      endDate: queryForm.endDate
+    }
+    
+    console.log('导出钱迹格式查询条件:', exportQuery)
+    
+    const res = await exportQianjiBills(exportQuery)
+    
+    console.log('导出钱迹格式响应:', res)
+    
+    // 检查响应是否为 blob
+    if (!(res instanceof Blob)) {
+      throw new Error('响应数据格式错误')
+    }
+    
+    // 创建下载链接
+    const blob = new Blob([res], { type: 'text/csv;charset=utf-8' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    const timestamp = new Date().toISOString().replace(/[:\-T]/g, '').split('.')[0]
+    link.download = `钱迹导入数据_${timestamp}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('导出钱迹格式成功')
+  } catch (error) {
+    console.error('导出钱迹格式失败:', error)
+    ElMessage.error(error.message || '导出钱迹格式失败')
+  } finally {
+    exportingQianji.value = false
   }
 }
 
