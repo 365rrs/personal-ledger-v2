@@ -244,7 +244,10 @@ public class BillServiceImpl implements BillService {
                     updateWrapper.set("include_in_statistics", dto.getIncludeInStatistics());
                 }
                 
-                billMapper.update(null, updateWrapper);
+                // 只有当 UpdateWrapper 设置了更新字段时才执行 update 操作
+                if (updateWrapper.getSqlSet() != null && !updateWrapper.getSqlSet().isEmpty()) {
+                    billMapper.update(null, updateWrapper);
+                }
                 
                 // 处理标签关联关系（如果提供了标签 ID 列表且在更新字段中）
                 if (dto.getUpdateFields().contains("tagIds") && dto.getTagIds() != null) {
