@@ -1812,12 +1812,12 @@ const handleExportQianji = async () => {
     }
     
     // 创建下载链接
-    const blob = new Blob([res], { type: 'text/csv;charset=utf-8' })
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
     const timestamp = new Date().toISOString().replace(/[:\-T]/g, '').split('.')[0]
-    link.download = `钱迹导入数据_${timestamp}.csv`
+    link.download = `钱迹导入数据_${timestamp}.xlsx`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

@@ -148,48 +148,15 @@ public class BillController {
         // 查询数据
         List<BillQianjiExportVO> list = billService.exportQianjiBills(dto);
         
-        // 设置响应头为CSV格式
-        response.setContentType("text/csv;charset=utf-8");
+        // 设置响应头为 Excel 格式
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");
         String fileName = URLEncoder.encode("钱迹导入数据_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")), "UTF-8");
-        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".csv");
+        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
         
-        // 使用 Apache Commons CSV 导出，完全控制格式
-        // 先写入 UTF-8 BOM
-        response.getOutputStream().write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
-        
-        // 创建 CSV Writer（使用 UTF-8，不添加额外 BOM）
-        try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
-                response.getOutputStream(), 
-                java.nio.charset.StandardCharsets.UTF_8);
-             org.apache.commons.csv.CSVPrinter csvPrinter = new org.apache.commons.csv.CSVPrinter(
-                writer,
-                org.apache.commons.csv.CSVFormat.DEFAULT)) {
-            
-            // 写入表头
-            csvPrinter.printRecord("时间", "分类", "二级分类", "类型", "金额", "账户1", "账户2", 
-                                  "备注", "账单标记", "手续费", "优惠券", "标签", "账单图片");
-            
-            // 写入数据行
-            for (BillQianjiExportVO vo : list) {
-                csvPrinter.printRecord(
-                    vo.getTime(),
-                    vo.getCategory(),
-                    vo.getSubCategory(),
-                    vo.getType(),
-                    vo.getAmount(),
-                    vo.getAccount1(),
-                    vo.getAccount2(),
-                    vo.getRemark(),
-                    vo.getBillFlag(),
-                    vo.getFee(),
-                    vo.getCoupon(),
-                    vo.getTags(),
-                    vo.getImage()
-                );
-            }
-            
-            csvPrinter.flush();
-        }
+        // 使用 EasyExcel 导出为 Excel 格式
+        EasyExcel.write(response.getOutputStream(), BillQianjiExportVO.class)
+                .sheet("钱迹导入")
+                .doWrite(list);
     }
 }
