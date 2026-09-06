@@ -3,7 +3,10 @@ import { ElMessage } from 'element-plus'
 
 const request = axios.create({
   baseURL: '/api',
-  timeout: 30000  // 30秒超时，避免第一次导出时超时
+  timeout: 30000,  // 30秒超时，避免第一次导出时超时
+  headers: {
+    'Content-Type': 'application/json;charset=UTF-8'
+  }
 })
 
 request.interceptors.response.use(
